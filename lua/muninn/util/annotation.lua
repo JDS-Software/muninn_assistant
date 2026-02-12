@@ -5,7 +5,7 @@ local logger = require("muninn.util.log").default
 M.namespace = vim.api.nvim_create_namespace("muninn_annotation")
 M.hl_group = "muninn_highlight"
 M.highlight = { fg = "#000000", bg = "#908080" }
-M.animation = "|/-\\"
+M.animation = vim.fn.split("⠛⠹⢸⣰⣤⣆⡇⠏", "\\zs")
 M.banner = " Working "
 M.wait_dur = 1000 / 10
 
@@ -20,7 +20,7 @@ local function create_animation_callback(ctx)
         end
 
         local anim_idx = (ctx.an_context.anim_state % #M.animation) + 1
-        local anim_char = M.animation:sub(anim_idx, anim_idx)
+        local anim_char = M.animation[anim_idx]
         local message = anim_char .. M.banner .. anim_char
 
         local start_options = {

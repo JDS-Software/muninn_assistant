@@ -24,7 +24,7 @@ function M.scissor_function_reference(context, placeholder)
     local line_start, _ = context.fn_context:get_start()
 
     for i, line in ipairs(vim.api.nvim_buf_get_lines(context.fn_context.bufnr, 0, -1, false)) do
-        if line_end >= i and i >= line_start then
+        if line_end >= i and i > line_start then
             if not marker_placed and #placeholder > 0 then
                 table.insert(ns_content, "")
                 table.insert(ns_content, placeholder)

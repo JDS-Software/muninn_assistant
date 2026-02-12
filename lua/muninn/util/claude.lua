@@ -61,7 +61,7 @@ local command_template = {
 ---@field structured_output ClaudeStructuredOutput
 ---@field uuid string
 
----@alias MuninnClaudeHandler fun(result: ClaudeResult?): number
+---@alias MuninnClaudeHandler fun(result: ClaudeResult?): nil
 
 ---@param system_result vim.SystemCompleted
 ---@param handler MuninnClaudeHandler
