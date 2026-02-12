@@ -1,0 +1,52 @@
+local M = {}
+
+---@class MnFnContext
+---@field bufnr number
+---@field fn_body MnReference
+---@field fn_comment MnReference?
+local MnFnContext = {}
+MnFnContext.__index = MnFnContext
+
+---@param bufnr number the buffer number for the function context
+---@param fn_body MnReference the function reference
+---@param fn_comment MnReference? the function's upper-most comment, if one exists
+function M.new(bufnr, fn_body, fn_comment)
+    return setmetatable({ bufnr = bufnr, fn_body = fn_body, fn_comment = fn_comment }, MnFnContext)
+end
+
+---@return number row
+---@return number col
+function MnFnContext:get_start()
+    if self.fn_comment and self.fn_comment.loc then
+        return self.fn_comment.loc.sRow, self.fn_comment.loc.sCol
+    end
+    return self.fn_body.loc.sRow, self.fn_body.loc.sCol
+end
+
+---
+---@return number row
+---@return number col
+function MnFnContext:get_end()
+    return self.fn_body.loc.eRow, self.fn_body.loc.eCol
+end
+
+---@param cursor table
+---@return boolean true if the context intersects the cursor position
+function MnFnContext:contains(cursor)
+    local sRow, sCol = self:get_start()
+    local eRow, eCol = self:get_end()
+    local cRow = cursor[2] - 1 -- getcurpos is 1-based, treesitter locations are 0-based
+    local cCol = cursor[3] - 1
+    if cRow < sRow or cRow > eRow then
+        return false
+    end
+    if cRow == sRow and cCol < sCol then
+        return false
+    end
+    if cRow == eRow and cCol >= eCol then
+        return false
+    end
+    return true
+end
+
+return M
