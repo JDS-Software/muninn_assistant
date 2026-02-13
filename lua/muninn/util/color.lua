@@ -43,4 +43,9 @@ function M.gradient(start_color, end_color, x)
 	return M.new_color(r, g, b)
 end
 
+M.muninn_blue = M.new_color_rgb(0x0d, 0x15, 0xd7) --#0d15d7
+M.cream = M.new_color_rgb(0xf0, 0xe9, 0xcc)
+M.black = M.new_color(0, 0, 0)
+M.white = M.new_color(1, 1, 1)
+M.grey = M.new_color(0.5, 0.5, 0.5)
 return M

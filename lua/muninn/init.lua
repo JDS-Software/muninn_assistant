@@ -1,19 +1,11 @@
 local M = {}
-local logging = require("muninn.util.log")
-local context = require("muninn.util.context")
-local prompt = require("muninn.util.prompt")
-local annotation = require("muninn.util.annotation")
-local claude = require("muninn.util.claude")
-local bufutil = require("muninn.util.bufutil")
-local prompt_dialogue = require("muninn.components.prompt")
 
 local function muninn_test()
 	-- noop
 end
 
--- comment
 local function select_local_function()
-	local ctx = context.get_context_at_cursor()
+	local ctx = require("muninn.util.context").get_context_at_cursor()
 	if ctx then
 		local sRow, sCol = ctx.fn_context:get_start()
 		vim.api.nvim_win_set_cursor(0, { sRow + 1, sCol })
@@ -23,57 +15,12 @@ local function select_local_function()
 	end
 end
 
-local function muninn_prompt()
-	local ctx = context.get_context_at_cursor()
-	logging.default():log("INFO", "Acquired context")
-	if ctx then
-		local cb = function(user_input)
-			local request_prompt = prompt.build_prompt(ctx, user_input)
-
-			ctx.an_context.state = context.STATE_RUN
-			annotation.start_annotation(ctx)
-
-			---@param result ClaudeResult
-			local result_cb = function(result)
-				if result then
-					bufutil.insert_safe_result_at_function(ctx, result.structured_output.content)
-				end
-				ctx.an_context.state = context.STATE_END
-			end
-			claude.execute_prompt(request_prompt, result_cb)
-		end
-		prompt_dialogue.show("What would you like Muninn to do?", cb)
-	end
-end
-
-local function muninn_autocomplete()
-	local ctx = context.get_context_at_cursor()
-	logging.default():log("INFO", "Acquired context")
-	if ctx then
-		local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
-
-		ctx.an_context.state = context.STATE_RUN
-		annotation.start_annotation(ctx)
-
-		---@param result ClaudeResult
-		local result_cb = function(result)
-			if result then
-				bufutil.insert_safe_result_at_function(ctx, result.structured_output.content)
-			end
-			ctx.an_context.state = context.STATE_END
-		end
-		claude.execute_prompt(request_prompt, result_cb)
-	end
-end
-
 local function init_commands()
 	vim.api.nvim_create_user_command("Muninn", select_local_function, { range = true })
-	vim.api.nvim_create_user_command("MuninnAutocomplete", muninn_autocomplete, { range = false })
-	vim.api.nvim_create_user_command("MuninnPrompt", muninn_prompt, {})
+	vim.api.nvim_create_user_command("MuninnAutocomplete", require("muninn.cmd.autocomplete"), { range = false })
+	vim.api.nvim_create_user_command("MuninnPrompt", require("muninn.cmd.prompt"), {})
 	vim.api.nvim_create_user_command("MuninnTest", muninn_test, {})
-	vim.api.nvim_create_user_command("MuninnLog", function()
-		logging.default():show(0.33, 0.80)
-	end, {})
+	vim.api.nvim_create_user_command("MuninnLog", require("muninn.cmd.log"), {})
 end
 
 local function init_keymap()
@@ -87,7 +34,7 @@ end
 
 function M.setup()
 	if not vim.g.muninn_init then
-		logging.setup()
+		require("muninn.util.log").setup()
 		init_commands()
 		init_keymap()
 		vim.g.muninn_init = true

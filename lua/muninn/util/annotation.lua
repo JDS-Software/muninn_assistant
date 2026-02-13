@@ -1,48 +1,24 @@
 local M = {}
 local context = require("muninn.util.context")
 local logger = require("muninn.util.log").default
-local time = require("muninn.util.time")
-local color = require("muninn.util.color")
-
-local looper = "⠛⠹⢸⣰⣤⣆⡇⠏"
-local sandpile = "  ⢀⣀⣠⣤⣴⣶⣾⣿⣿⣿⣾⣶⣴⣤⣠⣀⢀  "
-local crawler = "⢀⣀⣠⣤⣴⣶⣾⣿⡿⠿⠟⠛⠋⠉⠁"
-local rainer = "⠁⠉⠋⠛⠟⠿⡿⣿⣾⣶⣴⣤⣠⣀⢀"
-local spinner = "⠙⠸⢰⣠⣄⡤⢤⣠⣄⡆⠇⠋⠙⠚⠓⠋"
-local reverse_spinner = "⠋⠓⠚⠙⠋⠇⡆⣄⣠⢤⡤⣄⣠⢰⠸⠙"
 
 M.namespace = vim.api.nvim_create_namespace("muninn_annotation")
 M.hl_group = "muninn_highlight"
-M.highlight = { fg = "#000000", bg = "#f0e9cc" }
-M.animation = vim.fn.split(spinner, "\\zs")
-M.reverse_animation = vim.fn.split(reverse_spinner, "\\zs")
-M.banner = " Muninn Working "
-M.oscillator = time.new_oscillator(time.new_time(4))
-M.start_color = color.new_color(0, 0, 0)
-M.end_color = color.new_color_rgb(0x0d, 0x15, 0xd7) --#0d15d7
-M.icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
-M.wait_dur = 1000 / 24
 
 ---@param ctx MnContext
+---@param animation MnAnimation
 ---@return function
-local function create_animation_callback(ctx)
+local function create_animation_callback(ctx, animation)
 	return function()
 		if ctx.an_context.state == context.STATE_END then
 			logger():log("INFO", "animation over")
 			M.end_annotation(ctx)
 			return
 		end
+		animation:frame()
 
-		local highlight = vim.deepcopy(M.highlight)
-		highlight.fg = tostring(
-			color.gradient(M.start_color, M.end_color, M.oscillator:at(time.new_time():diff(ctx.an_context.anim_start)))
-		)
-		vim.api.nvim_set_hl(0, M.hl_group, highlight)
-
-		local anim_idx = (ctx.an_context.anim_state % #M.animation) + 1
-		local anim_char = M.animation[anim_idx]
-		local ranim_char = M.reverse_animation[anim_idx]
-		local message = anim_char .. M.icon .. ranim_char .. " " .. M.banner .. " " .. ranim_char .. M.icon .. anim_char
+		vim.api.nvim_set_hl(0, M.hl_group, animation:get_hl())
+		local message = animation:message()
 
 		local start_options = {
 			id = ctx.an_context.ext_mark_start,
@@ -70,20 +46,20 @@ local function create_animation_callback(ctx)
 		local ePos =
 			vim.api.nvim_buf_get_extmark_by_id(ctx.fn_context.bufnr, M.namespace, ctx.an_context.ext_mark_end, {})
 		vim.api.nvim_buf_set_extmark(ctx.fn_context.bufnr, M.namespace, ePos[1], ePos[2], end_options)
-		ctx.an_context.anim_state = ctx.an_context.anim_state + 1
-		vim.defer_fn(ctx.an_context.update_cb, M.wait_dur)
+		vim.defer_fn(ctx.an_context.update_cb, animation:get_wait())
 	end
 end
 
 ---@param ctx MnContext
-function M.start_annotation(ctx)
+---@param animation MnAnimation
+function M.start_annotation(ctx, animation)
 	logger():log("INFO", "annotation initialization")
-	vim.api.nvim_set_hl(0, M.hl_group, M.highlight)
+	vim.api.nvim_set_hl(0, M.hl_group, animation:get_hl())
 
 	local options = {
 		virt_lines = {
 			{
-				{ "\\ " .. M.banner .. "  \\", M.hl_group },
+				{ animation:message(), M.hl_group },
 			},
 		},
 		virt_lines_above = true,
@@ -98,7 +74,7 @@ function M.start_annotation(ctx)
 	local ext_mark_end = vim.api.nvim_buf_set_extmark(ctx.fn_context.bufnr, M.namespace, eRow, eCol, options)
 	ctx.an_context.ext_mark_end = ext_mark_end
 	ctx.an_context.ext_namespace = M.namespace
-	ctx.an_context.update_cb = create_animation_callback(ctx)
+	ctx.an_context.update_cb = create_animation_callback(ctx, animation)
 	logger():log("INFO", "launching animation")
 	ctx.an_context.update_cb()
 end
@@ -109,7 +85,6 @@ function M.end_annotation(ctx)
 		vim.api.nvim_buf_clear_namespace(ctx.fn_context.bufnr, ctx.an_context.ext_namespace, 0, -1)
 		ctx.an_context.ext_mark_start = nil
 		ctx.an_context.ext_mark_end = nil
-		ctx.an_context.anim_state = 0
 	end
 end
 

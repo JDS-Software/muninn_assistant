@@ -15,9 +15,7 @@ M.STATE_END = 2 --[[@as MnState]]
 ---@field ext_mark_start number? ext_mark ID
 ---@field ext_mark_end number? ext_mark ID
 ---@field state MnState
----@field anim_state number
 ---@field update_cb function
----@field anim_start table {sec, nsec}
 local MnAnnotationContext = {}
 MnAnnotationContext.__index = MnAnnotationContext
 
