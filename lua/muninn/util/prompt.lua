@@ -6,7 +6,7 @@ local prompt_template = [[Your task is to assist the user with a portion of thei
 The user input is between >>> USER INPUT START <<< and >>> USER INPUT END <<<.
 The file content is between >>> FILE CONTENT START <<< and >>> FILE CONTENT END <<<.
 The specific context that the user needs assistance with is between >>> SCOPE CONTENT START <<< and >>> SCOPE CONTENT END <<<.
-Your response will be inserted on the line containing %s.
+Your entire response will be inserted on the line containing %s.
 
 >>> USER INPUT START <<<
 %s
@@ -26,17 +26,17 @@ Your response will be inserted on the line containing %s.
 ---@param user_prompt string
 ---@return string
 function M.build_prompt(context, user_prompt)
-    local nonscope, scope = bufutil.scissor_function_reference(context, llm_placeholder)
-    if scope and nonscope then
-        return string.format(
-            prompt_template,
-            llm_placeholder,
-            user_prompt,
-            table.concat(nonscope, "\n"),
-            table.concat(scope, "\n")
-        )
-    end
-    return ""
+	local nonscope, scope = bufutil.scissor_function_reference(context, llm_placeholder)
+	if scope and nonscope then
+		return string.format(
+			prompt_template,
+			llm_placeholder,
+			user_prompt,
+			table.concat(nonscope, "\n"),
+			table.concat(scope, "\n")
+		)
+	end
+	return ""
 end
 
 return M

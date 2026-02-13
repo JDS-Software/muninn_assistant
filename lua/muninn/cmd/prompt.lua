@@ -5,6 +5,7 @@ local bufutil = require("muninn.util.bufutil")
 local prompt_dialogue = require("muninn.components.prompt")
 local context = require("muninn.util.context")
 local logger = require("muninn.util.log").default
+local anim = require("muninn.util.animation")
 
 return function()
 	local ctx = context.get_context_at_cursor()
@@ -14,7 +15,8 @@ return function()
 			local request_prompt = prompt.build_prompt(ctx, user_input)
 
 			ctx.an_context.state = context.STATE_RUN
-			annotation.start_annotation(ctx)
+			local animation = anim.new_query_animation()
+			annotation.start_annotation(ctx, animation)
 
 			---@param result ClaudeResult
 			local result_cb = function(result)

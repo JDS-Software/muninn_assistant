@@ -4,13 +4,10 @@ local color = require("muninn.util.color")
 local logger = require("muninn.util.log").default
 
 M.looper = vim.fn.split("⠛⠹⢸⣰⣤⣆⡇⠏", "\\zs")
-M.sandpile = vim.fn.split(
-	"⢀⢀⢀⢀⣀⣀⣀⣀⣠⣠⣠⣠⣤⣤⣤⣤⣴⣴⣴⣴⣶⣶⣶⣶⣾⣾⣾⣾⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣤⣤⣤⣤⣀⣀⣀⢀⢀      ",
-	"\\zs"
-)
+M.sandpile = vim.fn.split("⢀⣀⣠⣤⣴⣶⣾⣿⣶⣤⣀⢀  ", "\\zs")
 M.crawler = vim.fn.split("⢀⣀⣠⣤⣴⣶⣾⣿⡿⠿⠟⠛⠋⠉⠁", "\\zs")
 M.spinner = vim.fn.split("⠙⠸⢰⣠⣄⡤⢤⣠⣄⡆⠇⠋⠙⠚⠓⠋", "\\zs")
-M.reverse_spinner = vim.fn.split("⠋⠓⠚⠙⠋⠇⡆⣄⣠⢤⡤⣄⣠⢰⠸⠙", "\\zs")
+M.r_spinner = vim.fn.split("⠋⠇⡆⣄⣠⢤⡤⣄⣠⢰⠸⠙⠋⠓⠚⠙", "\\zs")
 M.blackbird_icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
 
 ---@class MnAnimation
@@ -19,11 +16,15 @@ M.blackbird_icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
 ---@field frame_number number
 ---@field banner string
 ---@field outer_animation table animation characters
+---@field outer_animation_frame_per_step number
 ---@field inner_animation table animation characters
+---@field inner_animation_frame_per_step number
 ---@field fg_start MnColor
 ---@field fg_end MnColor?
+---@field fg_gradient MnColorGradientFn
 ---@field bg_start MnColor
 ---@field bg_end MnColor?
+---@field bg_gradient MnColorGradientFn
 ---@field duration MnTime
 ---@field oscillator MnOscillator
 local MnAnimation = {}
@@ -40,8 +41,10 @@ function MnAnimation:frame()
 end
 
 function MnAnimation:message()
-	local outer_anim_idx = (self.frame_number % #self.outer_animation) + 1
-	local inner_anim_idx = (self.frame_number % #self.inner_animation) + 1
+	local outer_anim_idx = (math.floor(self.frame_number / self.outer_animation_frame_per_step) % #self.outer_animation)
+		+ 1
+	local inner_anim_idx = (math.floor(self.frame_number / self.inner_animation_frame_per_step) % #self.inner_animation)
+		+ 1
 	logger():log("INFO", string.format("outer_anim_idx: %d, inner_anim_idx: %d", outer_anim_idx, inner_anim_idx))
 	logger():log("INFO", vim.inspect(self))
 	return self.outer_animation[outer_anim_idx]
@@ -55,19 +58,20 @@ function MnAnimation:message()
 		.. self.outer_animation[outer_anim_idx]
 end
 
+---@return table {fg, bg}
 function MnAnimation:get_hl()
 	local fg, bg
 	local t = time.new_time()
 	local t_diff = t:diff(self.t_start)
 	if self.fg_start and self.fg_end then
-		fg = color.gradient(self.fg_start, self.fg_end, self.oscillator:at(t_diff))
+		fg = self.fg_gradient(self.fg_start, self.fg_end, self.oscillator:at(t_diff))
 	elseif self.fg_start then
 		fg = self.fg_start
 	else
 		fg = color.black
 	end
 	if self.bg_start and self.bg_end then
-		bg = color.gradient(self.bg_start, self.bg_end, self.oscillator:at(t_diff))
+		bg = self.bg_gradient(self.bg_start, self.bg_end, self.oscillator:at(t_diff))
 	elseif self.bg_start then
 		bg = self.bg_start
 	else
@@ -89,9 +93,13 @@ local function new_animation(banner, outer_animation, inner_animation, fg_start,
 		t_start = time.new_time(),
 		banner = banner,
 		inner_animation = inner_animation,
+		inner_animation_frame_per_step = 1,
 		outer_animation = outer_animation,
+		outer_animation_frame_per_step = 1,
 		fg_start = fg_start,
+		fg_gradient = color.gradient_linear,
 		bg_start = bg_start,
+		bg_gradient = color.gradient_linear,
 		target_fps = 24,
 		frame_number = 0,
 		duration = duration,
@@ -104,7 +112,16 @@ function M.new_autocomplete_animation()
 	local anim =
 		new_animation(" Muninn Autocompleting ", M.spinner, M.sandpile, color.black, color.cream, time.new_time(4))
 	anim.fg_end = color.muninn_blue
-	anim.target_fps = 10
+	anim.inner_animation_frame_per_step = 12
+	anim.outer_animation_frame_per_step = 2
+	return anim
+end
+
+---@return MnAnimation
+function M.new_query_animation()
+	local anim = new_animation(" Muninn Working ", M.spinner, M.r_spinner, color.black, color.cream, time.new_time(4))
+	anim.fg_end = color.muninn_blue
+	anim.outer_animation_frame_per_step = 2
 	return anim
 end
 
