@@ -1,5 +1,11 @@
 local M = {}
 
+---@param x number
+---@return number x rounded up or down (up at x.5)
+local function round(x)
+    return math.floor(x + 0.5)
+end
+
 ---@class MnColor
 ---@field r number proportion of red 0 to 1
 ---@field g number proportion of green 0 to 1
@@ -8,7 +14,7 @@ local MnColor = {}
 MnColor.__index = MnColor
 
 function MnColor.__tostring(self)
-    return string.format("#%02x%02x%02x", math.floor(255 * self.r), math.floor(255 * self.g), math.floor(255 * self.b))
+    return string.format("#%02x%02x%02x", round(255 * self.r), round(255 * self.g), round(255 * self.b))
 end
 
 ---@param r number red 0.0 to 1.0 value
@@ -27,6 +33,34 @@ end
 ---@param b number blue 0 to 255 value
 function M.new_color_rgb(r, g, b)
     return M.new_color(r / 255.0, g / 255.0, b / 255.0)
+end
+
+---@param str string hex string for color
+---@return MnColor
+function M.new_color_from_hex(str)
+    str = str:gsub("^#", "")
+
+    if #str ~= 3 and #str ~= 6 then
+        error("Invalid hex color string: must be 3 or 6 hex digits (with optional leading #)")
+    end
+
+    if not str:match("^%x+$") then
+        error("Invalid hex color string: contains non-hexadecimal characters")
+    end
+
+    local r, g, b
+
+    if #str == 3 then
+        r = tonumber(str:sub(1, 1) .. str:sub(1, 1), 16)
+        g = tonumber(str:sub(2, 2) .. str:sub(2, 2), 16)
+        b = tonumber(str:sub(3, 3) .. str:sub(3, 3), 16)
+    else
+        r = tonumber(str:sub(1, 2), 16)
+        g = tonumber(str:sub(3, 4), 16)
+        b = tonumber(str:sub(5, 6), 16)
+    end
+
+    return M.new_color_rgb(r, g, b)
 end
 
 ---@alias MnColorGradientFn fun(MnColor, MnColor, number): number

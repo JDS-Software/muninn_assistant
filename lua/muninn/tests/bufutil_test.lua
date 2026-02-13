@@ -62,25 +62,24 @@ local function read_buffer(bufnr)
     return vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 end
 
--- ── scissor_function_reference ──────────────────────────────
+-- scissor_function_reference
 
-local function test_scissor_nil_context()
+local function test_scissor()
+    -- handles nil context
     local b, m, e = bufutil.scissor_function_reference(nil)
     assert_nil(b)
     assert_nil(m)
     assert_nil(e)
-end
 
-local function test_scissor_splits_buffer()
+    -- regular scissor function
     local buf = make_buffer({
         "before 1", -- i=1, row 0
         "before 2", -- i=2, row 1
         "fn start", -- i=3, row 2
-        "fn body", -- i=4, row 3
-        "fn end", -- i=5, row 4
-        "after 1", -- i=6, row 5
+        "fn body",  -- i=4, row 3
+        "fn end",   -- i=5, row 4
+        "after 1",  -- i=6, row 5
     })
-    -- Function occupies 0-based rows 2..4
     local ctx = mock_context(buf, 2, 0, 4, 0)
     local b, m, e = bufutil.scissor_function_reference(ctx)
 
@@ -92,17 +91,16 @@ local function test_scissor_splits_buffer()
     assert_lines({ "before 1" }, b, "begin")
     assert_lines({ "before 2", "fn start", "fn body", "fn end" }, m, "middle")
     assert_lines({ "after 1" }, e, "ending")
-end
 
-local function test_scissor_function_at_top()
-    local buf = make_buffer({
+    --scissor at top
+    buf = make_buffer({
         "fn line 1", -- i=1, row 0
         "fn line 2", -- i=2, row 1
-        "after", -- i=3, row 2
+        "after",     -- i=3, row 2
     })
     -- Function at rows 0..1
-    local ctx = mock_context(buf, 0, 0, 1, 0)
-    local b, m, e = bufutil.scissor_function_reference(ctx)
+    ctx = mock_context(buf, 0, 0, 1, 0)
+    b, m, e = bufutil.scissor_function_reference(ctx)
 
     -- begin:  i < 0            → none
     -- middle: i >= 0 and i <= 2 → i=1,2
@@ -110,17 +108,16 @@ local function test_scissor_function_at_top()
     assert_lines({}, b, "begin")
     assert_lines({ "fn line 1", "fn line 2" }, m, "middle")
     assert_lines({ "after" }, e, "ending")
-end
 
-local function test_scissor_function_at_bottom()
-    local buf = make_buffer({
-        "before", -- i=1, row 0
+    --scissor at bottom
+    buf = make_buffer({
+        "before",    -- i=1, row 0
         "fn line 1", -- i=2, row 1
         "fn line 2", -- i=3, row 2
     })
     -- Function at rows 1..2
-    local ctx = mock_context(buf, 1, 0, 2, 0)
-    local b, m, e = bufutil.scissor_function_reference(ctx)
+    ctx = mock_context(buf, 1, 0, 2, 0)
+    b, m, e = bufutil.scissor_function_reference(ctx)
 
     -- begin:  i < 1            → none
     -- middle: i >= 1 and i <= 3 → i=1,2,3
@@ -128,17 +125,16 @@ local function test_scissor_function_at_bottom()
     assert_lines({}, b, "begin")
     assert_lines({ "before", "fn line 1", "fn line 2" }, m, "middle")
     assert_lines({}, e, "ending")
-end
 
-local function test_scissor_single_line_function()
-    local buf = make_buffer({
+    -- scissor single line
+    buf = make_buffer({
         "before",
         "local f = function() end",
         "after",
     })
     -- Single-line function at row 1, eRow = 1, so line_end = 2
-    local ctx = mock_context(buf, 1, 0, 1, 0)
-    local b, m, e = bufutil.scissor_function_reference(ctx)
+    ctx = mock_context(buf, 1, 0, 1, 0)
+    b, m, e = bufutil.scissor_function_reference(ctx)
 
     -- begin:  i < 1   → none
     -- middle: i >= 1 and i <= 2 → i=1,2
@@ -148,24 +144,10 @@ local function test_scissor_single_line_function()
     assert_lines({ "after" }, e, "ending")
 end
 
--- ── insert_safe_result_at_function ──────────────────────────
+-- insert_safe_result_at_function
 
-local function test_insert_replaces_range()
-    local buf = make_buffer({
-        "line 0",
-        "line 1",
-        "line 2",
-        "line 3",
-        "line 4",
-    })
-    -- Replace 0-based rows 1..3 (inclusive)
-    local ctx = mock_context(buf, 1, 0, 3, 0)
-    bufutil.insert_safe_result_at_function(ctx, "new A\nnew B")
-
-    assert_lines({ "line 0", "new A", "new B", "line 4" }, read_buffer(buf), "after replace")
-end
-
-local function test_insert_single_line_replacement()
+local function test_insert_safe_result_at_function()
+    -- insert of equal size
     local buf = make_buffer({
         "line 0",
         "old function body",
@@ -173,24 +155,20 @@ local function test_insert_single_line_replacement()
     })
     local ctx = mock_context(buf, 1, 0, 1, 0)
     bufutil.insert_safe_result_at_function(ctx, "new body")
-
     assert_lines({ "line 0", "new body", "line 2" }, read_buffer(buf), "single line replace")
-end
 
-local function test_insert_expands_lines()
-    local buf = make_buffer({
+    -- insert can increase line count
+    buf = make_buffer({
         "line 0",
         "to replace",
         "line 2",
     })
     local ctx = mock_context(buf, 1, 0, 1, 0)
     bufutil.insert_safe_result_at_function(ctx, "a\nb\nc\nd")
-
     assert_lines({ "line 0", "a", "b", "c", "d", "line 2" }, read_buffer(buf), "expanded")
-end
 
-local function test_insert_collapses_lines()
-    local buf = make_buffer({
+    -- insert can reduce line count
+    buf = make_buffer({
         "line 0",
         "fn 1",
         "fn 2",
@@ -199,11 +177,10 @@ local function test_insert_collapses_lines()
     })
     local ctx = mock_context(buf, 1, 0, 3, 0)
     bufutil.insert_safe_result_at_function(ctx, "single")
-
     assert_lines({ "line 0", "single", "line 4" }, read_buffer(buf), "collapsed")
 end
 
--- ── insert with extmarks ────────────────────────────────────
+-- insert with extmarks
 
 local function test_insert_uses_extmarks_when_present()
     local buf = make_buffer({
@@ -236,21 +213,14 @@ local function test_insert_empty_result()
     assert_lines({ "line 0", "", "line 2" }, read_buffer(buf), "empty replacement")
 end
 
--- ── runner ──────────────────────────────────────────────────
+-- runner
 
 function M.run()
     local runner = TestRunner.new("bufutil")
 
-    runner:test("scissor returns nil for nil context", test_scissor_nil_context)
-    runner:test("scissor splits buffer into begin/middle/ending", test_scissor_splits_buffer)
-    runner:test("scissor with function at top of buffer", test_scissor_function_at_top)
-    runner:test("scissor with function at bottom of buffer", test_scissor_function_at_bottom)
-    runner:test("scissor with single-line function", test_scissor_single_line_function)
-    runner:test("insert replaces range correctly", test_insert_replaces_range)
-    runner:test("insert replaces single line", test_insert_single_line_replacement)
-    runner:test("insert can expand line count", test_insert_expands_lines)
-    runner:test("insert can collapse line count", test_insert_collapses_lines)
-    runner:test("insert uses extmarks when present", test_insert_uses_extmarks_when_present)
+    runner:test("scissor", test_scissor)
+    runner:test("insert replaces range correctly", test_insert_safe_result_at_function)
+    runner:test("insert extmarks when present", test_insert_uses_extmarks_when_present)
     runner:test("insert handles empty replacement string", test_insert_empty_result)
 
     runner:run()
