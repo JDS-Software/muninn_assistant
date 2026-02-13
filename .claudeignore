@@ -1,0 +1,2 @@
+# Prevent agents from reading the Claude refusal test string
+lua/muninn/util/claude_refusal.lua
