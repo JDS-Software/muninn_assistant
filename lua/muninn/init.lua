@@ -1,25 +1,10 @@
 local M = {}
 
-local function muninn_test()
-	-- noop
-end
-
-local function select_local_function()
-	local ctx = require("muninn.util.context").get_context_at_cursor()
-	if ctx then
-		local sRow, sCol = ctx.fn_context:get_start()
-		vim.api.nvim_win_set_cursor(0, { sRow + 1, sCol })
-		vim.cmd("normal! v")
-		local eRow, eCol = ctx.fn_context:get_end()
-		vim.api.nvim_win_set_cursor(0, { eRow + 1, eCol })
-	end
-end
-
 local function init_commands()
-	vim.api.nvim_create_user_command("Muninn", select_local_function, { range = true })
+	vim.api.nvim_create_user_command("Muninn", require("muninn.cmd.default"), { range = true })
 	vim.api.nvim_create_user_command("MuninnAutocomplete", require("muninn.cmd.autocomplete"), { range = false })
 	vim.api.nvim_create_user_command("MuninnPrompt", require("muninn.cmd.prompt"), {})
-	vim.api.nvim_create_user_command("MuninnTest", muninn_test, {})
+	vim.api.nvim_create_user_command("MuninnTest", require("muninn.cmd.test"), {})
 	vim.api.nvim_create_user_command("MuninnLog", require("muninn.cmd.log"), {})
 end
 

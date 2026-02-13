@@ -84,12 +84,12 @@ local function test_scissor_splits_buffer()
 
 	-- NOTE: ipairs is 1-based while treesitter rows are 0-based,
 	-- so the split is offset by one from what pure row numbers suggest.
-	-- begin:  i < line_start(2)         → i=1
-	-- middle: i >= 2 and i < end(4)+1=5 → i=2,3,4
-	-- ending: else                      → i=5,6
+	-- begin:  i < line_start(2)          → i=1
+	-- middle: i >= 2 and i <= end(4)+1=5 → i=2,3,4,5
+	-- ending: else                       → i=6
 	assert_lines({ "before 1" }, b, "begin")
-	assert_lines({ "before 2", "fn start", "fn body" }, m, "middle")
-	assert_lines({ "fn end", "after 1" }, e, "ending")
+	assert_lines({ "before 2", "fn start", "fn body", "fn end" }, m, "middle")
+	assert_lines({ "after 1" }, e, "ending")
 end
 
 local function test_scissor_function_at_top()
@@ -102,12 +102,12 @@ local function test_scissor_function_at_top()
 	local ctx = mock_context(buf, 0, 0, 1, 0)
 	local b, m, e = bufutil.scissor_function_reference(ctx)
 
-	-- begin:  i < 0           → none
-	-- middle: i >= 0 and i < 2 → i=1
-	-- ending: else            → i=2,3
+	-- begin:  i < 0            → none
+	-- middle: i >= 0 and i <= 2 → i=1,2
+	-- ending: else             → i=3
 	assert_lines({}, b, "begin")
-	assert_lines({ "fn line 1" }, m, "middle")
-	assert_lines({ "fn line 2", "after" }, e, "ending")
+	assert_lines({ "fn line 1", "fn line 2" }, m, "middle")
+	assert_lines({ "after" }, e, "ending")
 end
 
 local function test_scissor_function_at_bottom()
@@ -120,12 +120,12 @@ local function test_scissor_function_at_bottom()
 	local ctx = mock_context(buf, 1, 0, 2, 0)
 	local b, m, e = bufutil.scissor_function_reference(ctx)
 
-	-- begin:  i < 1           → none
-	-- middle: i >= 1 and i < 3 → i=1,2
-	-- ending: else            → i=3
+	-- begin:  i < 1            → none
+	-- middle: i >= 1 and i <= 3 → i=1,2,3
+	-- ending: else             → (none)
 	assert_lines({}, b, "begin")
-	assert_lines({ "before", "fn line 1" }, m, "middle")
-	assert_lines({ "fn line 2" }, e, "ending")
+	assert_lines({ "before", "fn line 1", "fn line 2" }, m, "middle")
+	assert_lines({}, e, "ending")
 end
 
 local function test_scissor_single_line_function()
@@ -138,12 +138,12 @@ local function test_scissor_single_line_function()
 	local ctx = mock_context(buf, 1, 0, 1, 0)
 	local b, m, e = bufutil.scissor_function_reference(ctx)
 
-	-- begin:  i < 1  → none
-	-- middle: i >= 1 and i < 2 → i=1
-	-- ending: else   → i=2,3
+	-- begin:  i < 1   → none
+	-- middle: i >= 1 and i <= 2 → i=1,2
+	-- ending: else    → i=3
 	assert_lines({}, b, "begin")
-	assert_lines({ "before" }, m, "middle")
-	assert_lines({ "local f = function() end", "after" }, e, "ending")
+	assert_lines({ "before", "local f = function() end" }, m, "middle")
+	assert_lines({ "after" }, e, "ending")
 end
 
 -- ── insert_safe_result_at_function ──────────────────────────

@@ -99,13 +99,29 @@ function M.get_contexts_for_buffer(bufnr)
 		local type = n:type()
 		local matching_types = { "function_declaration", "function_definition", "func_literal" }
 		if vim.tbl_contains(matching_types, type) then
-			local maybe_comment = find_top_comment(n)
+			local scope = n
+			if type == "function_definition" or type == "func_literal" then
+				local ancestor = n:parent()
+				while ancestor do
+					local at = ancestor:type()
+					if at == "assignment_statement" then
+						scope = ancestor
+						local grandparent = ancestor:parent()
+						if grandparent and grandparent:type() == "variable_declaration" then
+							scope = grandparent
+						end
+						break
+					end
+					ancestor = ancestor:parent()
+				end
+			end
+			local maybe_comment = find_top_comment(scope)
 			local fn_comment = nil
 			if maybe_comment then
 				fn_comment = reference.new(maybe_comment)
 			end
 
-			local fn_body = reference.new(n)
+			local fn_body = reference.new(scope)
 			local ctx = fn_context.new(source, fn_body, fn_comment)
 			table.insert(results, ctx)
 		end

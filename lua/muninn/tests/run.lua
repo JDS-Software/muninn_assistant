@@ -31,6 +31,7 @@ local test_modules = {
 	"color_test",
 	"time_test",
 	"bufutil_test",
+	"context_test",
 }
 
 -- Test statistics
