@@ -45,6 +45,16 @@ function MnLogger:log(level, message)
     end
 end
 
+---@param level LogLevel
+---@param message string
+function MnLogger:alert(level, message)
+    local level_translate = { ERROR = vim.log.levels.ERROR, INFO = vim.log.levels.INFO, WARN = vim.log.levels.WARN }
+    local notify_level = level_translate[level] or vim.log.levels.INFO
+    vim.notify(message, notify_level, {})
+
+    self:log(level, message)
+end
+
 ---@param width_ratio number percentage of width
 ---@param height_ratio number percentage of height
 function MnLogger:show(width_ratio, height_ratio)

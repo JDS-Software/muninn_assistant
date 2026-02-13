@@ -37,7 +37,9 @@ return function()
                     bufutil.insert_safe_result_at_function(ctx, result.structured_output.content)
                 else
                     if result then
-                        logger():log("ERROR", "Claude returned result without structured output")
+                        logger():alert("ERROR", "Claude returned result without structured output")
+                    else
+                        logger():alert("ERROR", "Claude failed. Check the MuninnLog for more")
                     end
                     ctx.an_context.preserve_ext = true
                     vim.defer_fn(function()
