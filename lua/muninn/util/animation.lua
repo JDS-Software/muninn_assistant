@@ -1,7 +1,6 @@
 local M = {}
 local time = require("muninn.util.time")
 local color = require("muninn.util.color")
-local logger = require("muninn.util.log").default
 
 M.looper = vim.fn.split("⠛⠹⢸⣰⣤⣆⡇⠏", "\\zs")
 M.sandpile = vim.fn.split("⢀⣀⣠⣤⣴⣶⣾⣿⣶⣤⣀⢀  ", "\\zs")
@@ -46,8 +45,6 @@ function MnAnimation:message()
 		+ 1
 	local inner_anim_idx = (math.floor(self.frame_number / self.inner_animation_frame_per_step) % #self.inner_animation)
 		+ 1
-	logger():log("INFO", string.format("outer_anim_idx: %d, inner_anim_idx: %d", outer_anim_idx, inner_anim_idx))
-	logger():log("INFO", vim.inspect(self))
 	return self.outer_animation[outer_anim_idx]
 		.. M.blackbird_icon
 		.. self.inner_animation[inner_anim_idx]
@@ -144,6 +141,13 @@ function M.new_query_animation()
 	anim.outer_animation_frame_per_step = 2
 
 	anim:set_duration(time.new_time(6))
+	return anim
+end
+
+function M.new_demo_animation()
+	local anim =
+		new_animation(" Muninn Demo ", M.spinner, M.r_spinner, color.muninn_blue, color.black, time.new_time(1))
+	anim.fg_end = color.white
 	return anim
 end
 

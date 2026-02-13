@@ -1,10 +1,12 @@
+local float = require("muninn.components.float")
+
 local M = {}
 
 ---@alias LogLevel "INFO" | "WARN" | "ERROR"
 
 ---@class MnLogger
----@field bufnr number the buffer handle
----@field winnr number the window handle
+---@field buf_handle number? the buffer handle
+---@field win_handle number? the window handle
 ---@field buffer table line buffer
 local MnLogger = {}
 MnLogger.__index = MnLogger
@@ -15,7 +17,7 @@ end
 
 ---@return MnLogger
 function M.new_logger()
-    return setmetatable({ bufnr = nil, winnr = nil, buffer = {} }, MnLogger)
+    return setmetatable({ buf_handle = nil, win_handle = nil, buffer = {} }, MnLogger)
 end
 
 ---@param str string the string to split
@@ -44,32 +46,17 @@ function MnLogger:log(level, message)
 end
 
 ---@param width_ratio number percentage of width
----@param height_ratio number percentage of heigh
+---@param height_ratio number percentage of height
 function MnLogger:show(width_ratio, height_ratio)
-    local width = math.floor(vim.o.columns * width_ratio)
-    local height = math.floor(vim.o.lines * height_ratio)
-
-    local row = math.floor((vim.o.lines - height) / 2)
-    local col = math.floor(vim.o.columns - width)
-
-    local win_opts = {
-        relative = "editor",
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        border = "rounded",
-        title = " Logs[MUNINN] ",
-        title_pos = "center",
-        style = "minimal",
-    }
-
-    local buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
-    vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
-    vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
-
+    local buf = float.create_buf()
     self.buf_handle = buf
+
+    local win_opts = float.make_win_opts({
+        width_ratio = width_ratio,
+        height_ratio = height_ratio,
+        title = "Logs[MUNINN]",
+    })
+    win_opts.col = math.floor(vim.o.columns - win_opts.width)
 
     local ok, win_handle = pcall(vim.api.nvim_open_win, buf, true, win_opts)
     if not ok then
@@ -79,18 +66,13 @@ function MnLogger:show(width_ratio, height_ratio)
     self.win_handle = win_handle
     vim.api.nvim_buf_set_lines(self.buf_handle, 0, -1, false, self.buffer)
 
-    local augroup_name = "MUNINN_LOG_WINDOW"
-    local augroup = vim.api.nvim_create_augroup(augroup_name, {})
+    local augroup_name = "MuninnLogWindow"
+    local group = vim.api.nvim_create_augroup(augroup_name, { clear = true })
 
-    vim.api.nvim_create_autocmd("WinClosed", {
-        group = augroup,
-        pattern = tostring(self.win_handle),
-        once = true,
-        callback = function()
-            self.buf_handle = nil
-            self.win_handle = nil
-        end,
-    })
+    float.on_win_closed(group, self.win_handle, augroup_name, function()
+        self.buf_handle = nil
+        self.win_handle = nil
+    end)
 end
 
 --- initializes the module's default logger

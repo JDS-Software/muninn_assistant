@@ -1,8 +1,8 @@
 local M = {}
 
 local function init_commands()
-	vim.api.nvim_create_user_command("Muninn", require("muninn.cmd.default"), { range = true })
-	vim.api.nvim_create_user_command("MuninnAutocomplete", require("muninn.cmd.autocomplete"), { range = false })
+	vim.api.nvim_create_user_command("Muninn", require("muninn.cmd.default"), {})
+	vim.api.nvim_create_user_command("MuninnAutocomplete", require("muninn.cmd.autocomplete"), {})
 	vim.api.nvim_create_user_command("MuninnPrompt", require("muninn.cmd.prompt"), {})
 	vim.api.nvim_create_user_command("MuninnTest", require("muninn.cmd.test"), {})
 	vim.api.nvim_create_user_command("MuninnLog", require("muninn.cmd.log"), {})

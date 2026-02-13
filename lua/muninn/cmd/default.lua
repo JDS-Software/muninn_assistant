@@ -11,7 +11,7 @@ return function()
 		local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
 
 		logger():log("AUTOCOMPLETE PROMPT", request_prompt)
-		local anim = animation.new_autocomplete_animation()
+		local anim = animation.new_demo_animation()
 		annotation.start_annotation(ctx, anim)
 
 		local sRow, sCol = ctx.fn_context:get_start()
@@ -20,9 +20,13 @@ return function()
 		local eRow, eCol = ctx.fn_context:get_end()
 		vim.api.nvim_win_set_cursor(0, { eRow + 1, eCol })
 
-		vim.defer_fn(function()
-			ctx.an_context.state = context.STATE_END
-			vim.cmd("normal! \\<Esc>")
-		end, 5000)
+		local cleanup = function()
+			vim.schedule(function()
+				ctx.an_context.state = context.STATE_END
+				vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+			end)
+		end
+
+		vim.defer_fn(cleanup, 5000)
 	end
 end
