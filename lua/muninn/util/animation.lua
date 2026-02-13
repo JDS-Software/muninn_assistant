@@ -40,6 +40,7 @@ function MnAnimation:frame()
 	self.frame_number = self.frame_number + 1
 end
 
+---@return string message
 function MnAnimation:message()
 	local outer_anim_idx = (math.floor(self.frame_number / self.outer_animation_frame_per_step) % #self.outer_animation)
 		+ 1
@@ -56,6 +57,12 @@ function MnAnimation:message()
 		.. self.inner_animation[inner_anim_idx]
 		.. M.blackbird_icon
 		.. self.outer_animation[outer_anim_idx]
+end
+
+---@param t MnTime
+function MnAnimation:set_duration(t)
+	self.duration = t
+	self.oscillator = time.new_oscillator(t)
 end
 
 ---@return table {fg, bg}
@@ -111,7 +118,12 @@ end
 function M.new_autocomplete_animation()
 	local anim =
 		new_animation(" Muninn Autocompleting ", M.spinner, M.sandpile, color.black, color.cream, time.new_time(4))
-	anim.fg_end = color.muninn_blue
+	anim.fg_gradient = color.gradient_triangular(color.muninn_blue)
+	anim.fg_end = color.black
+
+	anim.bg_gradient = color.gradient_triangular(color.grey)
+	anim.bg_end = color.cream
+
 	anim.inner_animation_frame_per_step = 12
 	anim.outer_animation_frame_per_step = 2
 	return anim
@@ -119,9 +131,19 @@ end
 
 ---@return MnAnimation
 function M.new_query_animation()
-	local anim = new_animation(" Muninn Working ", M.spinner, M.r_spinner, color.black, color.cream, time.new_time(4))
+	local dark_grey = color.new_color(0.33, 0.33, 0.33)
+	local anim =
+		new_animation(" Muninn Working ", M.spinner, M.r_spinner, color.muninn_blue, color.black, time.new_time(4))
+
+	anim.fg_gradient = color.gradient_triangular(color.white)
 	anim.fg_end = color.muninn_blue
+
+	anim.bg_gradient = color.gradient_triangular(dark_grey)
+	anim.bg_end = color.black
+
 	anim.outer_animation_frame_per_step = 2
+
+	anim:set_duration(time.new_time(6))
 	return anim
 end
 
