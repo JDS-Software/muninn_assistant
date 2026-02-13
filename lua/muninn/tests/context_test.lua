@@ -81,10 +81,10 @@ local function test_function_declaration_still_works()
 	local ctxs = context.get_contexts_for_buffer(buf)
 	local fn_decl = ctxs[2] -- function M.working()
 
-	-- function_declaration at row 10, comment at row 9
+	-- function_declaration at row 11, comment at row 10
 	assert_not_nil(fn_decl.fn_comment, "comment above M.working should be captured")
-	assert_equal(9, fn_decl.fn_comment.loc.sRow, "comment should start at row 9")
-	assert_equal(10, fn_decl.fn_body.loc.sRow, "fn_body should start at row 10")
+	assert_equal(10, fn_decl.fn_comment.loc.sRow, "comment should start at row 10")
+	assert_equal(11, fn_decl.fn_body.loc.sRow, "fn_body should start at row 11")
 end
 
 -- ── runner ──────────────────────────────────────────────────
