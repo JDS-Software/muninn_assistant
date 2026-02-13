@@ -1,0 +1,46 @@
+local M = {}
+
+---@class MnColor
+---@field r number proportion of red 0 to 1
+---@field g number proportion of green 0 to 1
+---@field b number proportion of blue 0 to 1
+local MnColor = {}
+MnColor.__index = MnColor
+
+function MnColor.__tostring(self)
+	return string.format("#%02x%02x%02x", math.floor(255 * self.r), math.floor(255 * self.g), math.floor(255 * self.b))
+end
+
+---@param r number red 0.0 to 1.0 value
+---@param g number green 0.0 to 1.0 value
+---@param b number blue 0.0 to 1.0 value
+function M.new_color(r, g, b)
+	return setmetatable({
+		r = math.max(0, math.min(1, r)),
+		g = math.max(0, math.min(1, g)),
+		b = math.max(0, math.min(1, b)),
+	}, MnColor)
+end
+
+---@param r number red 0 to 255 value
+---@param g number green 0 to 255 value
+---@param b number blue 0 to 255 value
+function M.new_color_rgb(r, g, b)
+	return M.new_color(r / 255.0, g / 255.0, b / 255.0)
+end
+
+---@param start_color MnColor starting color. x = 0 results in 100% start
+---@param end_color MnColor ending color. x = 1 results in 100% end
+---@param x number value from 0 to 1 representing the location along the spectrum from start to end
+---@return MnColor
+function M.gradient(start_color, end_color, x)
+	x = math.max(0, math.min(1, x))
+
+	local r = start_color.r + (end_color.r - start_color.r) * x
+	local g = start_color.g + (end_color.g - start_color.g) * x
+	local b = start_color.b + (end_color.b - start_color.b) * x
+
+	return M.new_color(r, g, b)
+end
+
+return M

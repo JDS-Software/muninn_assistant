@@ -1,6 +1,8 @@
 local M = {}
 local context = require("muninn.util.context")
 local logger = require("muninn.util.log").default
+local time = require("muninn.util.time")
+local color = require("muninn.util.color")
 
 local looper = "⠛⠹⢸⣰⣤⣆⡇⠏"
 local sandpile = "  ⢀⣀⣠⣤⣴⣶⣾⣿⣿⣿⣾⣶⣴⣤⣠⣀⢀  "
@@ -11,12 +13,15 @@ local reverse_spinner = "⠋⠓⠚⠙⠋⠇⡆⣄⣠⢤⡤⣄⣠⢰⠸⠙"
 
 M.namespace = vim.api.nvim_create_namespace("muninn_annotation")
 M.hl_group = "muninn_highlight"
-M.highlight = { fg = "#000000", bg = "#ffffff" }
+M.highlight = { fg = "#000000", bg = "#f0e9cc" }
 M.animation = vim.fn.split(spinner, "\\zs")
 M.reverse_animation = vim.fn.split(reverse_spinner, "\\zs")
-M.banner = " Muninn "
+M.banner = " Muninn Working "
+M.oscillator = time.new_oscillator(time.new_time(4))
+M.start_color = color.new_color(0, 0, 0)
+M.end_color = color.new_color_rgb(0x0d, 0x15, 0xd7) --#0d15d7
 M.icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
-M.wait_dur = 1000 / 10
+M.wait_dur = 1000 / 24
 
 ---@param ctx MnContext
 ---@return function
@@ -27,6 +32,12 @@ local function create_animation_callback(ctx)
 			M.end_annotation(ctx)
 			return
 		end
+
+		local highlight = vim.deepcopy(M.highlight)
+		highlight.fg = tostring(
+			color.gradient(M.start_color, M.end_color, M.oscillator:at(time.new_time():diff(ctx.an_context.anim_start)))
+		)
+		vim.api.nvim_set_hl(0, M.hl_group, highlight)
 
 		local anim_idx = (ctx.an_context.anim_state % #M.animation) + 1
 		local anim_char = M.animation[anim_idx]
