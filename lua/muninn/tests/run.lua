@@ -30,6 +30,7 @@ local test_modules = {
 	"runner_test",
 	"color_test",
 	"time_test",
+	"bufutil_test",
 }
 
 -- Test statistics

@@ -12,6 +12,7 @@ return function()
 	if ctx then
 		local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
 
+		logger():log("AUTOCOMPLETE PROMPT", request_prompt)
 		local anim = animation.new_autocomplete_animation()
 
 		ctx.an_context.state = context.STATE_RUN
