@@ -17,7 +17,7 @@ local function init_keymap()
 	vim.keymap.set({ "n" }, "<leader>ml", ":MuninnLog<CR>", { silent = true, desc = "Muninn Log" })
 end
 
-function M.setup()
+function M.setup(user_input)
 	if not vim.g.muninn_init then
 		require("muninn.util.log").setup()
 		init_commands()

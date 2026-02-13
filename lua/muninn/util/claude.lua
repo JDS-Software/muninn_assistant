@@ -63,6 +63,8 @@ local command_template = {
 
 ---@alias MuninnClaudeHandler fun(result: ClaudeResult?): nil
 
+local logger = require("muninn.util.log").default
+
 ---@param system_result vim.SystemCompleted
 ---@param handler MuninnClaudeHandler
 local function handle_output(system_result, handler)
@@ -72,6 +74,10 @@ local function handle_output(system_result, handler)
             handler(result)
         end
     else
+        logger():log("ERROR", "Claude CLI exited with code " .. system_result.code)
+        if system_result.stderr and system_result.stderr ~= "" then
+            logger():log("ERROR", system_result.stderr)
+        end
         handler(nil)
     end
 end

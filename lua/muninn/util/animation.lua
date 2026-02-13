@@ -31,57 +31,57 @@ MnAnimation.__index = MnAnimation
 
 ---@return number ms_to_wait
 function MnAnimation:get_wait()
-	return 1000 / self.target_fps
+    return 1000 / self.target_fps
 end
 
 --- this will increment the internal frame state by 1
 function MnAnimation:frame()
-	self.frame_number = self.frame_number + 1
+    self.frame_number = self.frame_number + 1
 end
 
 ---@return string message
 function MnAnimation:message()
-	local outer_anim_idx = (math.floor(self.frame_number / self.outer_animation_frame_per_step) % #self.outer_animation)
-		+ 1
-	local inner_anim_idx = (math.floor(self.frame_number / self.inner_animation_frame_per_step) % #self.inner_animation)
-		+ 1
-	return self.outer_animation[outer_anim_idx]
-		.. M.blackbird_icon
-		.. self.inner_animation[inner_anim_idx]
-		.. " "
-		.. self.banner
-		.. " "
-		.. self.inner_animation[inner_anim_idx]
-		.. M.blackbird_icon
-		.. self.outer_animation[outer_anim_idx]
+    local outer_anim_idx = (math.floor(self.frame_number / self.outer_animation_frame_per_step) % #self.outer_animation)
+        + 1
+    local inner_anim_idx = (math.floor(self.frame_number / self.inner_animation_frame_per_step) % #self.inner_animation)
+        + 1
+    return self.outer_animation[outer_anim_idx]
+        .. M.blackbird_icon
+        .. self.inner_animation[inner_anim_idx]
+        .. " "
+        .. self.banner
+        .. " "
+        .. self.inner_animation[inner_anim_idx]
+        .. M.blackbird_icon
+        .. self.outer_animation[outer_anim_idx]
 end
 
 ---@param t MnTime
 function MnAnimation:set_duration(t)
-	self.duration = t
-	self.oscillator = time.new_oscillator(t)
+    self.duration = t
+    self.oscillator = time.new_oscillator(t)
 end
 
 ---@return table {fg, bg}
 function MnAnimation:get_hl()
-	local fg, bg
-	local t = time.new_time()
-	local t_diff = t:diff(self.t_start)
-	if self.fg_start and self.fg_end then
-		fg = self.fg_gradient(self.fg_start, self.fg_end, self.oscillator:at(t_diff))
-	elseif self.fg_start then
-		fg = self.fg_start
-	else
-		fg = color.black
-	end
-	if self.bg_start and self.bg_end then
-		bg = self.bg_gradient(self.bg_start, self.bg_end, self.oscillator:at(t_diff))
-	elseif self.bg_start then
-		bg = self.bg_start
-	else
-		bg = color.white
-	end
-	return { fg = tostring(fg), bg = tostring(bg) }
+    local fg, bg
+    local t = time.new_time()
+    local t_diff = t:diff(self.t_start)
+    if self.fg_start and self.fg_end then
+        fg = self.fg_gradient(self.fg_start, self.fg_end, self.oscillator:at(t_diff))
+    elseif self.fg_start then
+        fg = self.fg_start
+    else
+        fg = color.black
+    end
+    if self.bg_start and self.bg_end then
+        bg = self.bg_gradient(self.bg_start, self.bg_end, self.oscillator:at(t_diff))
+    elseif self.bg_start then
+        bg = self.bg_start
+    else
+        bg = color.white
+    end
+    return { fg = tostring(fg), bg = tostring(bg) }
 end
 
 ---Creates a new animation instance with the specified parameters
@@ -93,62 +93,73 @@ end
 ---@param duration MnTime Duration of the animation cycle
 ---@return MnAnimation
 local function new_animation(banner, outer_animation, inner_animation, fg_start, bg_start, duration)
-	return setmetatable({
-		t_start = time.new_time(),
-		banner = banner,
-		inner_animation = inner_animation,
-		inner_animation_frame_per_step = 1,
-		outer_animation = outer_animation,
-		outer_animation_frame_per_step = 1,
-		fg_start = fg_start,
-		fg_gradient = color.gradient_linear,
-		bg_start = bg_start,
-		bg_gradient = color.gradient_linear,
-		target_fps = 24,
-		frame_number = 0,
-		duration = duration,
-		oscillator = time.new_oscillator(duration),
-	}, MnAnimation)
+    return setmetatable({
+        t_start = time.new_time(),
+        banner = banner,
+        inner_animation = inner_animation,
+        inner_animation_frame_per_step = 1,
+        outer_animation = outer_animation,
+        outer_animation_frame_per_step = 1,
+        fg_start = fg_start,
+        fg_gradient = color.gradient_linear,
+        bg_start = bg_start,
+        bg_gradient = color.gradient_linear,
+        target_fps = 24,
+        frame_number = 0,
+        duration = duration,
+        oscillator = time.new_oscillator(duration),
+    }, MnAnimation)
 end
 
 ---@return MnAnimation
 function M.new_autocomplete_animation()
-	local anim =
-		new_animation(" Muninn Autocompleting ", M.spinner, M.sandpile, color.black, color.cream, time.new_time(4))
-	anim.fg_gradient = color.gradient_triangular(color.muninn_blue)
-	anim.fg_end = color.black
+    local anim =
+        new_animation(" Muninn Autocompleting ", M.spinner, M.sandpile, color.black, color.cream, time.new_time(4))
+    anim.fg_gradient = color.gradient_triangular(color.muninn_blue)
+    anim.fg_end = color.black
 
-	anim.bg_gradient = color.gradient_triangular(color.grey)
-	anim.bg_end = color.cream
+    anim.bg_gradient = color.gradient_triangular(color.grey)
+    anim.bg_end = color.cream
 
-	anim.inner_animation_frame_per_step = 12
-	anim.outer_animation_frame_per_step = 2
-	return anim
+    anim.inner_animation_frame_per_step = 12
+    anim.outer_animation_frame_per_step = 2
+    return anim
 end
 
 ---@return MnAnimation
 function M.new_query_animation()
-	local dark_grey = color.new_color(0.33, 0.33, 0.33)
-	local anim =
-		new_animation(" Muninn Working ", M.spinner, M.r_spinner, color.muninn_blue, color.black, time.new_time(4))
+    local dark_grey = color.new_color(0.33, 0.33, 0.33)
+    local anim =
+        new_animation(" Muninn Working ", M.spinner, M.r_spinner, color.muninn_blue, color.black, time.new_time(4))
 
-	anim.fg_gradient = color.gradient_triangular(color.white)
-	anim.fg_end = color.muninn_blue
+    anim.fg_gradient = color.gradient_triangular(color.white)
+    anim.fg_end = color.muninn_blue
 
-	anim.bg_gradient = color.gradient_triangular(dark_grey)
-	anim.bg_end = color.black
+    anim.bg_gradient = color.gradient_triangular(dark_grey)
+    anim.bg_end = color.black
 
-	anim.outer_animation_frame_per_step = 2
+    anim.outer_animation_frame_per_step = 2
 
-	anim:set_duration(time.new_time(6))
-	return anim
+    anim:set_duration(time.new_time(6))
+    return anim
 end
 
 function M.new_demo_animation()
-	local anim =
-		new_animation(" Muninn Demo ", M.spinner, M.r_spinner, color.muninn_blue, color.black, time.new_time(1))
-	anim.fg_end = color.white
-	return anim
+    local anim =
+        new_animation(" Muninn Demo ", M.spinner, M.r_spinner, color.muninn_blue, color.black, time.new_time(1))
+    anim.fg_end = color.white
+    return anim
+end
+
+function M.new_failure_animation()
+    local anim =
+        new_animation(" Muninn Failed — :MuninnLog for details ", M.crawler, M.looper, color.red, color.black, time.new_time(1))
+    anim.fg_gradient = color.gradient_triangular(color.white)
+    anim.fg_end = color.black
+
+    anim.bg_gradient = color.gradient_triangular(color.black)
+    anim.bg_end = color.red
+    return anim
 end
 
 return M
