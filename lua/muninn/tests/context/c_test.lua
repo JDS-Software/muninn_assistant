@@ -25,9 +25,33 @@ local function block_comment(ctxs)
 		and ctx.fn_body.loc.sRow == 10
 end
 
+-- struct point { int x; int y; };
+local function struct_definition(ctxs)
+	local ctx = ctxs[3]
+	return ctx.fn_comment ~= nil
+		and ctx.fn_comment.loc.sRow == 14
+		and ctx.fn_body.loc.sRow == 15
+end
+
+-- enum direction { NORTH, SOUTH, EAST, WEST };
+local function enum_definition(ctxs)
+	local ctx = ctxs[4]
+	return ctx.fn_comment ~= nil
+		and ctx.fn_comment.loc.sRow == 20
+		and ctx.fn_body.loc.sRow == 21
+end
+
+-- union value { int i; float f; };
+local function union_definition(ctxs)
+	local ctx = ctxs[5]
+	return ctx.fn_comment ~= nil
+		and ctx.fn_comment.loc.sRow == 28
+		and ctx.fn_body.loc.sRow == 29
+end
+
 -- static void helper(void) { ... }
 local function static_function(ctxs)
-	local ctx = ctxs[3]
+	local ctx = ctxs[6]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 43
 		and ctx.fn_body.loc.sRow == 44
@@ -38,10 +62,13 @@ end
 local function test_c()
 	local ctxs = utils.load_fixture(FIXTURE, "c")
 	assert_not_nil(ctxs, "c treesitter parser must be available")
-	assert_equal(3, #ctxs, "should detect all 3 functions")
+	assert_equal(6, #ctxs, "should detect all 6 scopes")
 
 	assert_true(basic_function(ctxs), "basic function with line comment")
 	assert_true(block_comment(ctxs), "function with block comment")
+	assert_true(struct_definition(ctxs), "struct definition")
+	assert_true(enum_definition(ctxs), "enum definition")
+	assert_true(union_definition(ctxs), "union definition")
 	assert_true(static_function(ctxs), "static function")
 end
 
