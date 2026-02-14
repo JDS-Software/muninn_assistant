@@ -33,6 +33,9 @@ local test_modules = {
 	"bufutil_test",
 	"context.lua_test",
 	"context.c_test",
+	"context.go_test",
+	"context.javascript_test",
+	"context.typescript_test",
 }
 
 -- Test statistics
