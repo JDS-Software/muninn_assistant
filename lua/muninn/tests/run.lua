@@ -160,7 +160,7 @@ local function preamble()
 	failed_tests = 0
 
 	println("==================")
-	println("Huginn Test Suite")
+	println("Muninn Test Suite")
 	println("==================")
 	println("")
 end

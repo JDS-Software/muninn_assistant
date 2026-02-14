@@ -24,6 +24,10 @@ return function()
 	logger():log("INFO", "Acquired context")
 	if ctx then
 		local cb = function(user_input)
+			if not user_input or #user_input == 0 then
+				return
+			end
+
 			local request_prompt = prompt.build_prompt(ctx, user_input)
 
 			ctx:next_state()

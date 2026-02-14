@@ -26,12 +26,14 @@ local function create_animation_callback(ctx, animation)
 			virt_text_pos = "inline",
 			virt_lines_above = true,
 		}
+
 		local sPos = vim.api.nvim_buf_get_extmark_by_id(
 			ctx.fn_context.bufnr,
 			ctx.an_context.ext_namespace,
 			ctx.an_context.ext_mark_start,
 			{}
 		)
+
 		vim.api.nvim_buf_set_extmark(
 			ctx.fn_context.bufnr,
 			ctx.an_context.ext_namespace,
@@ -64,16 +66,6 @@ end
 ---@param animation MnAnimation
 function M.start_annotation(ctx, animation)
 	logger():log("INFO", "annotation initialization")
-	vim.api.nvim_set_hl(0, ctx.an_context.hl_group, animation:get_hl())
-
-	local options = {
-		virt_lines = {
-			{
-				{ animation:message(), ctx.an_context.hl_group },
-			},
-		},
-		virt_lines_above = true,
-	}
 
 	ctx.an_context.update_cb = create_animation_callback(ctx, animation)
 	logger():log("INFO", "launching animation")

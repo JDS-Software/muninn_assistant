@@ -10,8 +10,9 @@ return function()
 	if ctx then
 		local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
 
-		logger():log("AUTOCOMPLETE PROMPT", request_prompt)
-		local anim = animation.new_demo_animation()
+		logger():log("PROMPT", request_prompt)
+
+		local anim = animation.new_autocomplete_animation()
 		ctx:next_state()
 		annotation.start_annotation(ctx, anim)
 
