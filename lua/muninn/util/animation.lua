@@ -167,20 +167,21 @@ end
 
 ---@return MnAnimation
 function M.new_autocomplete_animation()
-	local banner = M.new_dual_animation_banner(" Muninn Autocompleting ", M.rainer, 5, M.sandpile, 8)
-	local anim = new_animation(banner, color.muninn_orange_saturated, color.muninn_background, time.new_time(10))
+	local banner = M.new_dual_animation_banner(" Muninn Autocompleting ", M.rainer, 6, M.sandpile, 8)
+	local anim = new_animation(banner, color.muninn_orange, color.muninn_background, time.new_time(10))
 	anim.fg_gradient = color.gradient_triangular(color.muninn_orange)
 	anim.fg_end = color.muninn_orange_saturated
 
 	anim.bg_gradient = color.gradient_triangular(color.muninn_blue)
 	anim.bg_end = color.muninn_background
+	anim.target_fps = 48
 
 	return anim
 end
 
 ---@return MnAnimation
 function M.new_query_animation()
-	local banner = M.new_dual_animation_banner(" Muninn Working ", M.sworl, 2, M.crawler, 1)
+	local banner = M.new_dual_animation_banner(" Muninn Working ", M.sworl, 4, M.crawler, 2)
 	local anim = new_animation(banner, color.muninn_orange, color.muninn_background, time.new_time(6))
 
 	anim.fg_gradient = color.gradient_triangular(color.muninn_orange_saturated)
@@ -188,6 +189,7 @@ function M.new_query_animation()
 
 	anim.bg_gradient = color.gradient_triangular(color.muninn_blue)
 	anim.bg_end = color.muninn_background
+	anim.target_fps = 48
 
 	return anim
 end

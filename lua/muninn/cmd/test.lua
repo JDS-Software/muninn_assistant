@@ -45,6 +45,6 @@ return function()
 			vim.defer_fn(function()
 				show_query_annotation(ctx)
 			end, 100)
-		end, 5000)
+		end, 10000)
 	end
 end

@@ -48,7 +48,7 @@ function MnOscillator:at(time)
 	local duration_millis = self.duration:to_millis()
 	local position = (time_millis % duration_millis) / duration_millis
 	local two_pi = 2 * math.pi
-	return (math.cos(position * two_pi) + 1) / 2
+	return (-math.cos(position * two_pi) + 1) / 2
 end
 
 return M
