@@ -48,3 +48,6 @@ static void helper(void) {
 
 // forward declaration
 void forward(void);
+
+// global variable
+int global_count = 42;

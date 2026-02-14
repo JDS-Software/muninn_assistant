@@ -43,7 +43,13 @@ local function find_top_comment(node)
 
 	while sibling:type() == "comment" do
 		local next_sibling = sibling:prev_sibling()
+
 		if next_sibling then
+			local ssr, _, _, _ = sibling:range()
+			local _, _, nser, _ = next_sibling:range()
+			if ssr - nser > 1 then
+				return sibling
+			end
 			sibling = next_sibling
 		else
 			return sibling
@@ -104,18 +110,42 @@ end
 local function get_relevant_struct_scope(n)
 	local parent = n:parent()
 	if parent and parent:type() == "type_definition" then
-		return nil
+		return parent
 	end
 	return parent and parent:type() == "declaration" and parent or n
 end
 
 ---@param n TSNode
+---@return TSNode?
+local function get_relevant_var_scope(n)
+	local parent = n:parent()
+	if not parent or parent:parent() ~= nil then
+		return nil
+	end
+	for child in n:iter_children() do
+		if child:type() == "function_declarator" then
+			return nil
+		end
+	end
+	return n
+end
+
+---@param scope TSNode
+---@return string
+local function scope_key(scope)
+	local sr, sc, er, ec = scope:range()
+	return sr .. ":" .. sc .. ":" .. er .. ":" .. ec
+end
+
+---@param n TSNode
 ---@param source number
 ---@param results table
-local function process_node(n, source, results)
+---@param seen table
+local function process_node(n, source, results, seen)
 	local type = n:type()
 	local fn_types = { "function_declaration", "function_definition", "func_literal" }
 	local struct_types = { "struct_specifier", "enum_specifier", "union_specifier" }
+	local var_decl_types = { "variable_declaration", "declaration" }
 
 	local scope = nil
 	if vim.tbl_contains(fn_types, type) then
@@ -125,9 +155,20 @@ local function process_node(n, source, results)
 		if not scope then
 			return
 		end
+	elseif vim.tbl_contains(var_decl_types, type) then
+		scope = get_relevant_var_scope(n)
+		if not scope then
+			return
+		end
 	end
 
 	if scope then
+		local key = scope_key(scope)
+		if seen[key] then
+			return
+		end
+		seen[key] = true
+
 		local fn_body = reference.new(scope)
 
 		local maybe_comment = find_top_comment(scope)
@@ -161,9 +202,10 @@ function M.get_contexts_for_buffer(bufnr)
 	logger():log("INFO", "Got " .. #trees .. " trees")
 
 	local results = {}
+	local seen = {}
 
 	local function walk(n)
-		process_node(n, source, results)
+		process_node(n, source, results, seen)
 		for child in n:iter_children() do
 			walk(child)
 		end

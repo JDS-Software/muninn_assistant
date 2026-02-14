@@ -9,9 +9,16 @@ local FIXTURE = "lua/muninn/tests/fixtures/lang.lua"
 
 -- feature validators
 
+-- local M = {}
+local function module_table_declaration(ctxs)
+	local ctx = ctxs[1]
+	return ctx.fn_comment == nil
+		and ctx.fn_body.loc.sRow == 0
+end
+
 -- M.example = function() ... end
 local function table_field_assigned(ctxs)
-	local ctx = ctxs[1]
+	local ctx = ctxs[2]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 2
 		and ctx.fn_body.loc.sRow == 3
@@ -20,7 +27,7 @@ end
 
 -- function M.working() ... end
 local function declaration_dot(ctxs)
-	local ctx = ctxs[2]
+	local ctx = ctxs[3]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 7
 		and ctx.fn_body.loc.sRow == 8
@@ -28,7 +35,7 @@ end
 
 -- function M:method() ... end
 local function method_colon(ctxs)
-	local ctx = ctxs[3]
+	local ctx = ctxs[4]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 12
 		and ctx.fn_body.loc.sRow == 13
@@ -36,7 +43,7 @@ end
 
 -- local function helper() ... end
 local function local_function(ctxs)
-	local ctx = ctxs[4]
+	local ctx = ctxs[5]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 17
 		and ctx.fn_body.loc.sRow == 18
@@ -44,7 +51,7 @@ end
 
 -- local assigned = function() ... end
 local function local_var_assigned(ctxs)
-	local ctx = ctxs[5]
+	local ctx = ctxs[6]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 22
 		and ctx.fn_body.loc.sRow == 23
@@ -53,7 +60,7 @@ end
 
 -- function global_func() ... end
 local function global_function(ctxs)
-	local ctx = ctxs[6]
+	local ctx = ctxs[7]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 27
 		and ctx.fn_body.loc.sRow == 28
@@ -61,7 +68,7 @@ end
 
 -- function M.outer() local function inner() ... end end
 local function nested_outer(ctxs)
-	local ctx = ctxs[7]
+	local ctx = ctxs[8]
 	return ctx.fn_comment ~= nil
 		and ctx.fn_comment.loc.sRow == 32
 		and ctx.fn_body.loc.sRow == 33
@@ -69,13 +76,13 @@ end
 
 -- local function inner() ... end  (inside M.outer)
 local function nested_inner(ctxs)
-	local ctx = ctxs[8]
+	local ctx = ctxs[9]
 	return ctx.fn_body.loc.sRow == 34
 end
 
 -- vim.schedule(function() ... end)
 local function callback_function(ctxs)
-	local ctx = ctxs[9]
+	local ctx = ctxs[10]
 	return ctx.fn_body.loc.sRow == 41
 end
 
@@ -84,8 +91,9 @@ end
 local function test_lua()
 	local ctxs = utils.load_fixture(FIXTURE, "lua")
 	assert_not_nil(ctxs, "lua treesitter parser must be available")
-	assert_equal(9, #ctxs, "should detect all 9 functions")
+	assert_equal(10, #ctxs, "should detect all 10 scopes")
 
+	assert_true(module_table_declaration(ctxs), "module table declaration")
 	assert_true(table_field_assigned(ctxs), "table-field assigned function")
 	assert_true(declaration_dot(ctxs), "function declaration with dot")
 	assert_true(method_colon(ctxs), "method syntax with colon")
