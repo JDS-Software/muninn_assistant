@@ -92,6 +92,7 @@ local function get_relevant_fn_scope(n)
 	local scope = n
 	local type = n:type()
 	local matching_types = { "function_definition", "func_literal" }
+	local decl_types = { "variable_declaration", "lexical_declaration", "var_declaration" }
 	if vim.list_contains(matching_types, type) then
 		local ancestor = n:parent()
 		while ancestor do
@@ -102,6 +103,9 @@ local function get_relevant_fn_scope(n)
 				if grandparent and grandparent:type() == "variable_declaration" then
 					scope = grandparent
 				end
+				break
+			elseif vim.list_contains(decl_types, at) then
+				scope = ancestor
 				break
 			end
 			ancestor = ancestor:parent()
@@ -148,9 +152,29 @@ end
 ---@param seen table
 local function process_node(n, source, results, seen)
 	local type = n:type()
-	local fn_types = { "function_declaration", "function_definition", "func_literal" }
-	local struct_types = { "struct_specifier", "enum_specifier", "union_specifier" }
-	local var_decl_types = { "variable_declaration", "declaration" }
+	local fn_types = {
+		"function_declaration",
+		"function_definition",
+		"func_literal",
+		"method_declaration",
+		"generator_function_declaration",
+	}
+	local struct_types = {
+		"struct_specifier",
+		"enum_specifier",
+		"union_specifier",
+		"type_declaration",
+		"class_declaration",
+		"interface_declaration",
+		"type_alias_declaration",
+		"enum_declaration",
+	}
+	local var_decl_types = {
+		"variable_declaration",
+		"declaration",
+		"lexical_declaration",
+		"var_declaration",
+	}
 
 	local scope = nil
 	if vim.tbl_contains(fn_types, type) then

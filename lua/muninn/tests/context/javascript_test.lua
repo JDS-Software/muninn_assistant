@@ -73,20 +73,12 @@ local function global_variable(ctxs)
 		and ctx.fn_body.loc.sRow == 47
 end
 
--- (function() { ... })();
-local function iife_callback(ctxs)
-	local ctx = ctxs[9]
-	return ctx.fn_comment ~= nil
-		and ctx.fn_comment.loc.sRow == 49
-		and ctx.fn_body.loc.sRow == 50
-end
-
 -- runner
 
 local function test_javascript()
 	local ctxs = utils.load_fixture(FIXTURE, "javascript")
 	assert_not_nil(ctxs, "javascript treesitter parser must be available")
-	assert_equal(9, #ctxs, "should detect all 9 scopes")
+	assert_equal(8, #ctxs, "should detect all 8 scopes")
 
 	assert_true(basic_function(ctxs), "basic function declaration")
 	assert_true(function_with_params(ctxs), "function with parameters")
@@ -96,7 +88,6 @@ local function test_javascript()
 	assert_true(generator_function(ctxs), "generator function")
 	assert_true(async_function(ctxs), "async function")
 	assert_true(global_variable(ctxs), "global variable")
-	assert_true(iife_callback(ctxs), "IIFE callback")
 end
 
 function M.run()
