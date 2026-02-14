@@ -12,6 +12,7 @@ return function()
 
 		logger():log("AUTOCOMPLETE PROMPT", request_prompt)
 		local anim = animation.new_demo_animation()
+		ctx:next_state()
 		annotation.start_annotation(ctx, anim)
 
 		local sRow, sCol = ctx.fn_context:get_start()
@@ -22,7 +23,7 @@ return function()
 
 		local cleanup = function()
 			vim.schedule(function()
-				ctx.an_context.state = context.STATE_END
+				ctx:next_state()
 				vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
 			end)
 		end

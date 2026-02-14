@@ -2,35 +2,37 @@ local M = {}
 
 local logger = require("muninn.util.log").default
 local fn_context = require("muninn.util.context_util.fn_context")
+local an_context = require("muninn.util.context_util.an_context")
 local reference = require("muninn.util.context_util.reference")
 local time = require("muninn.util.time")
 
----@alias MnState number
-M.STATE_INIT = 0 --[[@as MnState]]
-M.STATE_RUN = 1 --[[@as MnState]]
-M.STATE_END = 2 --[[@as MnState]]
-
----@class MnAnnotationContext
----@field ext_namespace number
----@field ext_mark_start number? ext_mark ID
----@field ext_mark_end number? ext_mark ID
----@field state MnState
----@field preserve_ext boolean
----@field update_cb function
-local MnAnnotationContext = {}
-MnAnnotationContext.__index = MnAnnotationContext
-
 ---@class MnContext
 ---@field fn_context MnFnContext
----@field an_context MnAnnotationContext
+---@field an_context MnAnContext
 local MnContext = {}
 MnContext.__index = MnContext
+
+function MnContext:reset_state()
+	self.an_context.state = an_context.STATE_INIT
+end
+
+function MnContext:next_state()
+	if self:finished() then
+		return
+	end
+	self.an_context.state = self.an_context.state + 1
+end
+
+---@return boolean
+function MnContext:finished()
+	return self.an_context.state == an_context.STATE_END
+end
 
 ---@param fn_ctx MnFnContext
 ---@return MnContext
 local function new_context(fn_ctx)
-	local an_context = setmetatable({ anim_state = 0, anim_start = time.new_time() }, MnAnnotationContext)
-	return setmetatable({ fn_context = fn_ctx, an_context = an_context }, MnContext)
+	local an_ctx = an_context.new(fn_ctx)
+	return setmetatable({ fn_context = fn_ctx, an_context = an_ctx }, MnContext)
 end
 
 ---@param node TSNode
@@ -55,21 +57,24 @@ local function find_top_comment(node)
 			return sibling
 		end
 	end
+
 	sibling = sibling:next_sibling()
-	if sibling:type() == "comment" then
+	if sibling and sibling:type() == "comment" then
 		return sibling
 	end
 	return nil
 end
 
+---@param win_handle number?
 ---@return MnContext?
-function M.get_context_at_cursor()
+function M.get_context_at_cursor(win_handle)
+	local win_nr = win_handle or 0
 	local fn_ctxs = M.get_contexts_for_buffer()
 	if not fn_ctxs or #fn_ctxs == 0 then
 		return nil
 	end
 
-	local cursor = vim.fn.getcurpos(0)
+	local cursor = vim.fn.getcurpos(win_nr)
 
 	for i = #fn_ctxs, 1, -1 do
 		local fn_ctx = fn_ctxs[i]
