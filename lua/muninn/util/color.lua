@@ -1,4 +1,5 @@
 local M = {}
+local logger = require("muninn.util.log").default
 
 ---@param x number
 ---@return number x rounded up or down (up at x.5)
@@ -99,16 +100,35 @@ function M.gradient_triangular(intermed_color)
 	end
 end
 
--- Colors
+---@return MnColor
+
 M.muninn_background = M.new_color_from_hex("#1e1e2e")
 M.muninn_blue = M.new_color_from_hex("#4c4c74")
 M.muninn_orange = M.new_color_from_hex("#b57c0e")
 M.muninn_orange_saturated = M.new_color_from_hex("#ec7c0e")
-M.cream = M.new_color_rgb(0xf0, 0xe9, 0xcc)
+M.cream = M.new_color_from_hex("#f0e9cc")
 M.black = M.new_color(0, 0, 0)
 M.white = M.new_color(1, 1, 1)
 M.red = M.new_color(1, 0, 0)
 M.grey = M.new_color(0.5, 0.5, 0.5)
+
+function M.get_theme_background()
+	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
+	local bg_color = normal_hl.bg
+
+	if not bg_color then
+		-- Fallback to default background if Normal highlight doesn't have bg set
+		return M.muninn_background
+	end
+	logger():log("INFO", vim.inspect(normal_hl))
+
+	-- Convert decimal color value to RGB components
+	local r = math.floor(bg_color / 65536) % 256
+	local g = math.floor(bg_color / 256) % 256
+	local b = bg_color % 256
+
+	return M.new_color_rgb(r, g, b)
+end
 
 -- Gradients
 M.gradient_thru_black = M.gradient_triangular(M.black)
