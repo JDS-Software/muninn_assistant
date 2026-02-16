@@ -26,7 +26,7 @@ end
 ---@param target_color MnColor the color to move towards
 ---@param x number the proportion of motion. i.e. 0.1 would be 10% of the distance between self and target_color
 ---@return MnColor resulting color
-function MnColor:lirp(target_color, x)
+function MnColor:lerp(target_color, x)
     x = math.max(0, math.min(1, x))
     local new_r = self.r + (target_color.r - self.r) * x
     local new_g = self.g + (target_color.g - self.g) * x
@@ -92,7 +92,7 @@ function M.new_linear_gradient(start_color, end_color)
     ---@param x number 0 to 1
     return function(x)
         local proportion = math.max(0, math.min(x, 1))
-        return start_color:lirp(end_color, proportion)
+        return start_color:lerp(end_color, proportion)
     end
 end
 
@@ -106,10 +106,10 @@ function M.new_triangular_gradient(start_color, intermed_color, end_color)
     return function(x)
         if x < 0.5 then
             local t = x * 2 -- Scale x from [0, 0.5] to [0, 1]
-            return start_color:lirp(intermed_color, t)
+            return start_color:lerp(intermed_color, t)
         else
             local t = (x - 0.5) * 2 -- Scale x from [0.5, 1] to [0, 1]
-            return intermed_color:lirp(end_color, t)
+            return intermed_color:lerp(end_color, t)
         end
     end
 end
