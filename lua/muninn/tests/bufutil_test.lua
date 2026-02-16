@@ -66,7 +66,7 @@ end
 
 local function test_scissor()
     -- handles nil context
-    local b, m, e = bufutil.scissor_function_reference(nil)
+    local b, m, e = bufutil.scissor_function_reference()
     assert_nil(b)
     assert_nil(m)
     assert_nil(e)

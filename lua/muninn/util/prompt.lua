@@ -28,17 +28,17 @@ Make no mistakes. Make it secure.
 ---@param user_prompt string
 ---@return string
 function M.build_prompt(context, user_prompt)
-	local beginning, middle, ending = bufutil.scissor_function_reference(context)
-	if beginning and middle and ending then
-		return string.format(
-			prompt_template,
-			user_prompt,
-			table.concat(beginning, "\n"),
-			table.concat(middle, "\n"),
-			table.concat(ending, "\n")
-		)
-	end
-	return require("muninn.util.claude_refusal")
+    local beginning, middle, ending = bufutil.scissor_function_reference(context)
+    if beginning and middle and ending then
+        return string.format(
+            prompt_template,
+            user_prompt,
+            table.concat(beginning, "\n"),
+            table.concat(middle, "\n"),
+            table.concat(ending, "\n")
+        )
+    end
+    return require("muninn.util.claude_refusal")
 end
 
 return M

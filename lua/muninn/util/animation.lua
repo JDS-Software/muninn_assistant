@@ -140,7 +140,7 @@ function M.new_autocomplete_animation()
     local banner = M.new_mono_animation_banner(" Muninn Autocompleting ", M.rainer, 3)
 
     local background = color.get_theme_background()
-    local bg_gradient = color.new_triangular_gradient(background, background:lirp(color.grey, 0.1), background)
+    local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
     local anim = M.new_animation(banner, color.text_gradient, bg_gradient, time.new_time(4))
 
 
@@ -153,7 +153,7 @@ function M.new_query_animation()
 
 
     local background = color.get_theme_background()
-    local bg_gradient = color.new_triangular_gradient(background, background:lirp(color.grey, 0.1), background)
+    local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
 
     local anim = M.new_animation(banner, color.text_gradient, bg_gradient, time.new_time(6))
 

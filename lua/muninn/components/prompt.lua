@@ -35,95 +35,95 @@ local M = {}
 ---@param opts string|muninn.PromptOpts
 ---@param callback fun(input: string|nil)
 function M.show(opts, callback)
-	if not callback or type(callback) ~= "function" then
-		return
-	end
+    if not callback or type(callback) ~= "function" then
+        return
+    end
 
-	if type(opts) == "string" then
-		opts = { message = opts }
-	end
+    if type(opts) == "string" then
+        opts = { message = opts }
+    end
 
-	if type(opts) ~= "table" or not opts.message or opts.message == "" then
-		callback(nil)
-		return
-	end
+    if type(opts) ~= "table" or not opts.message or opts.message == "" then
+        callback(nil)
+        return
+    end
 
-	-- Create editable scratch buffer
-	local buf = float.create_buf("markdown")
+    -- Create editable scratch buffer
+    local buf = float.create_buf("markdown")
 
-	-- Pre-fill default content
-	if opts.default and opts.default ~= "" then
-		local lines = vim.split(opts.default, "\n")
-		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-	end
+    -- Pre-fill default content
+    if opts.default and opts.default ~= "" then
+        local lines = vim.split(opts.default, "\n")
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    end
 
-	-- Open floating window
-	local ok_win, win = pcall(
-		vim.api.nvim_open_win,
-		buf,
-		true,
-		float.make_win_opts({
-			width_ratio = 0.6,
-			height_ratio = 0.3,
-			title = opts.message,
-		})
-	)
-	if not ok_win then
-		callback(nil)
-		return
-	end
-	vim.cmd("startinsert")
+    -- Open floating window
+    local ok_win, win = pcall(
+        vim.api.nvim_open_win,
+        buf,
+        true,
+        float.make_win_opts({
+            width_ratio = 0.6,
+            height_ratio = 0.3,
+            title = opts.message,
+        })
+    )
+    if not ok_win then
+        callback(nil)
+        return
+    end
+    vim.cmd("startinsert")
 
-	-- Guard against double-firing the callback
-	local resolved = false
+    -- Guard against double-firing the callback
+    local resolved = false
 
-	local function close_win()
-		if win and vim.api.nvim_win_is_valid(win) then
-			vim.api.nvim_win_close(win, true)
-		end
-	end
+    local function close_win()
+        if win and vim.api.nvim_win_is_valid(win) then
+            vim.api.nvim_win_close(win, true)
+        end
+    end
 
-	local function submit()
-		if resolved then
-			return
-		end
-		resolved = true
-		vim.cmd("stopinsert")
-		local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-		local content = table.concat(lines, "\n")
-		content = content:match("^(.-)%s*$") or ""
-		close_win()
-		callback(content)
-	end
+    local function submit()
+        if resolved then
+            return
+        end
+        resolved = true
+        vim.cmd("stopinsert")
+        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+        local content = table.concat(lines, "\n")
+        content = content:match("^(.-)%s*$") or ""
+        close_win()
+        callback(content)
+    end
 
-	local function dismiss()
-		if resolved then
-			return
-		end
-		resolved = true
-		vim.cmd("stopinsert")
-		close_win()
-		callback(nil)
-	end
+    local function dismiss()
+        if resolved then
+            return
+        end
+        resolved = true
+        vim.cmd("stopinsert")
+        close_win()
+        callback(nil)
+    end
 
-	-- Keymaps: <C-s> submits, <Esc> dismisses
-	vim.keymap.set("n", "<C-s>", submit, { buffer = buf, nowait = true })
-	vim.keymap.set("i", "<C-s>", submit, { buffer = buf, nowait = true })
-	vim.keymap.set("n", "<Esc>", dismiss, { buffer = buf, nowait = true })
+    -- Keymaps: <C-s> submits, <Esc> dismisses
+    vim.keymap.set("n", "<C-s>", submit, { buffer = buf, nowait = true })
+    vim.keymap.set("i", "<C-s>", submit, { buffer = buf, nowait = true })
+    vim.keymap.set("n", "<Esc>", dismiss, { buffer = buf, nowait = true })
 
-	-- Handle external close (e.g., :q) and focus retention
-	local group = vim.api.nvim_create_augroup("MuninnPrompt", { clear = true })
+    -- Handle external close (e.g., :q) and focus retention
+    local group = vim.api.nvim_create_augroup("MuninnPrompt", { clear = true })
 
-	float.on_win_closed(group, win, "MuninnPrompt", function()
-		if not resolved then
-			resolved = true
-			callback(nil)
-		end
-	end)
+    float.on_win_closed(group, win, "MuninnPrompt", function()
+        if not resolved then
+            resolved = true
+            callback(nil)
+        end
+    end)
 
-	float.on_win_leave(group, buf, function()
-		return win
-	end)
+    float.on_win_leave(group, buf, function()
+        return win
+    end)
 end
 
 return M
