@@ -1,4 +1,4 @@
-local animation = require("muninn.util.animation")
+local animation = require("muninn.util.decor.animation")
 local bufutil = require("muninn.util.bufutil")
 local claude = require("muninn.util.claude")
 local context = require("muninn.util.context")

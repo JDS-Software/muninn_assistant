@@ -3,7 +3,7 @@
 
 local M = {}
 
-local animation = require("muninn.util.animation")
+local animation = require("muninn.util.decor.animation")
 local color = require("muninn.util.color")
 local time = require("muninn.util.time")
 

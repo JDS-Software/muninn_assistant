@@ -1,4 +1,4 @@
-local animation = require("muninn.util.animation")
+local animation = require("muninn.util.decor.animation")
 local context = require("muninn.util.context")
 local logger = require("muninn.util.log").default
 local prompt = require("muninn.util.prompt")

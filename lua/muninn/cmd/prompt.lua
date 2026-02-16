@@ -4,7 +4,7 @@ local bufutil = require("muninn.util.bufutil")
 local prompt_dialogue = require("muninn.components.prompt")
 local context = require("muninn.util.context")
 local logger = require("muninn.util.log").default
-local animation = require("muninn.util.animation")
+local animation = require("muninn.util.decor.animation")
 ---
 ---@param ctx MnContext
 local function alert_failure(ctx)
