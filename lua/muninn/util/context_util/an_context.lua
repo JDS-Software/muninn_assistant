@@ -15,7 +15,6 @@ local hl_group_base = "muninn_highlight"
 ---@field ext_mark_end number? ext_mark ID
 ---@field state MnState
 ---@field preserve_ext boolean
----@field update_cb function
 local MnAnContext = {}
 MnAnContext.__index = MnAnContext
 
@@ -42,10 +41,6 @@ end
 
 ---@param bufnr number
 function MnAnContext:reset(bufnr)
-    if self.update_cb then
-        self.update_cb = nil
-    end
-
     if not self.preserve_ext then
         if self.ext_namespace then
             vim.api.nvim_buf_clear_namespace(bufnr, self.ext_namespace, 0, -1)

@@ -2,7 +2,7 @@ local M = {}
 local context = require("muninn.util.context")
 local color = require("muninn.util.color")
 
-M.ext_namespace = vim.api.nvim_create_namespace("hugin_scope_viewer")
+M.ext_namespace = vim.api.nvim_create_namespace("muninn_scope_viewer")
 M.hl_group = "scope_viewer_hl"
 
 local cache = {} --[[@as table<string, MnScopeViewerCacheLine>]]

@@ -86,8 +86,9 @@ end
 
 ---@alias MnColorGradientFn fun(number): MnColor
 
----@param start_color
----@param end_color
+---@param start_color MnColor
+---@param end_color MnColor
+---@return MnColorGradientFn
 function M.new_linear_gradient(start_color, end_color)
     ---@param x number 0 to 1
     return function(x)
@@ -96,9 +97,9 @@ function M.new_linear_gradient(start_color, end_color)
     end
 end
 
----@param start_color MnColor starting color. x = 0 results in 100% start
----@param intermed_color MnColor starting color. x = 0 results in 100% start
----@param end_color MnColor ending color. x = 1 results in 100% end
+---@param start_color MnColor starting color. x = 0 results in 100% start_color
+---@param intermed_color MnColor starting color. x = 0.5 results in 100% intermed_color
+---@param end_color MnColor ending color. x = 1 results in 100% end_color
 ---@return MnColorGradientFn
 function M.new_triangular_gradient(start_color, intermed_color, end_color)
     ---@param x number value from 0 to 1 representing the location along the spectrum from start to end
@@ -113,8 +114,6 @@ function M.new_triangular_gradient(start_color, intermed_color, end_color)
         end
     end
 end
-
----@return MnColor
 
 M.muninn_background = M.new_color_from_hex("#1e1e2e")
 M.muninn_blue = M.new_color_from_hex("#4c4c74")

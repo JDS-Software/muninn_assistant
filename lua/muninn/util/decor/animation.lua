@@ -1,3 +1,5 @@
+local M = {}
+
 local color = require("muninn.util.color")
 local logger = require("muninn.util.log").default
 local time = require("muninn.util.time")
@@ -137,7 +139,6 @@ function MnAnimation:start(ctx)
 end
 
 --- Animation factories
-local M = {}
 
 ---Creates a new animation instance with the specified parameters
 ---@param banner MnBanner The text to display in the center of the animation
