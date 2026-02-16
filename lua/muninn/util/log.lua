@@ -33,6 +33,7 @@ end
 ---@param level LogLevel
 ---@param message string
 function MnLogger:log(level, message)
+    if not message or #message == 0 then return end
     local buff = split_newline(message)
 
     table.insert(self.buffer, level .. ": " .. buff[1])
@@ -48,6 +49,8 @@ end
 ---@param level LogLevel
 ---@param message string
 function MnLogger:alert(level, message)
+    if not message or #message == 0 then return end
+
     local level_translate = { ERROR = vim.log.levels.ERROR, INFO = vim.log.levels.INFO, WARN = vim.log.levels.WARN }
     local notify_level = level_translate[level] or vim.log.levels.INFO
     vim.notify(message, notify_level, {})

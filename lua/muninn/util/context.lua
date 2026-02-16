@@ -4,11 +4,40 @@ local logger = require("muninn.util.log").default
 local fn_context = require("muninn.util.context_util.fn_context")
 local an_context = require("muninn.util.context_util.an_context")
 local reference = require("muninn.util.context_util.reference")
-local time = require("muninn.util.time")
+
+local matching_function_types = { "function_definition", "func_literal" }
+
+local fn_types = {
+    "function_declaration",
+    "function_definition",
+    "func_literal",
+    "method_declaration",
+    "generator_function_declaration",
+}
+
+local struct_types = {
+    "struct_specifier",
+    "enum_specifier",
+    "union_specifier",
+    "type_declaration",
+    "class_declaration",
+    "class_definition",
+    "interface_declaration",
+    "type_alias_declaration",
+    "enum_declaration",
+}
+
+local decl_types = {
+    "variable_declaration",
+    "declaration",
+    "lexical_declaration",
+    "var_declaration",
+}
 
 ---@class MnContext
 ---@field fn_context MnFnContext
 ---@field an_context MnAnContext
+---@field name string?
 local MnContext = {}
 MnContext.__index = MnContext
 
@@ -26,6 +55,30 @@ end
 ---@return boolean
 function MnContext:finished()
     return self.an_context.state == an_context.STATE_END
+end
+
+--- reads the relevant name from the fn_context's TSNode or "anonymous"
+---@return string
+function MnContext:_read_name()
+    if self.fn_context.fn_body.node:named() then
+        local name_node = self.fn_context.fn_body.node:field("name")[1]
+        if name_node then
+            return vim.treesitter.get_node_text(name_node, self.fn_context.bufnr, {})
+        end
+    end
+    return "anonymous"
+end
+
+function MnContext:get_bufnr()
+    return self.fn_context.bufnr
+end
+
+---@return string
+function MnContext:get_name()
+    if not self.name then
+        self.name = self:_read_name()
+    end
+    return self.name
 end
 
 ---@param fn_ctx MnFnContext
@@ -65,16 +118,15 @@ local function find_top_comment(node)
     return nil
 end
 
----@param win_handle number?
+---@param bufnr number?
 ---@return MnContext?
-function M.get_context_at_cursor(win_handle)
-    local win_nr = win_handle or 0
-    local fn_ctxs = M.get_contexts_for_buffer()
+function M.get_context_at_cursor(bufnr)
+    local fn_ctxs = M.get_contexts_for_buffer(bufnr)
     if not fn_ctxs or #fn_ctxs == 0 then
         return nil
     end
 
-    local cursor = vim.fn.getcurpos(win_nr)
+    local cursor = vim.fn.getcurpos(0)
 
     for i = #fn_ctxs, 1, -1 do
         local fn_ctx = fn_ctxs[i]
@@ -82,6 +134,7 @@ function M.get_context_at_cursor(win_handle)
             return new_context(fn_ctx)
         end
     end
+
     logger():log("INFO", "failed to find relevant context")
     return nil
 end
@@ -91,9 +144,7 @@ end
 local function get_relevant_fn_scope(n)
     local scope = n
     local type = n:type()
-    local matching_types = { "function_definition", "func_literal" }
-    local decl_types = { "variable_declaration", "lexical_declaration", "var_declaration" }
-    if vim.list_contains(matching_types, type) then
+    if vim.list_contains(matching_function_types, type) then
         local ancestor = n:parent()
         while ancestor do
             local at = ancestor:type()
@@ -158,30 +209,6 @@ end
 ---@param seen table
 local function process_node(n, source, results, seen)
     local type = n:type()
-    local fn_types = {
-        "function_declaration",
-        "function_definition",
-        "func_literal",
-        "method_declaration",
-        "generator_function_declaration",
-    }
-    local struct_types = {
-        "struct_specifier",
-        "enum_specifier",
-        "union_specifier",
-        "type_declaration",
-        "class_declaration",
-        "class_definition",
-        "interface_declaration",
-        "type_alias_declaration",
-        "enum_declaration",
-    }
-    local var_decl_types = {
-        "variable_declaration",
-        "declaration",
-        "lexical_declaration",
-        "var_declaration",
-    }
 
     local scope = nil
     if vim.tbl_contains(fn_types, type) then
@@ -191,7 +218,7 @@ local function process_node(n, source, results, seen)
         if not scope then
             return
         end
-    elseif vim.tbl_contains(var_decl_types, type) then
+    elseif vim.tbl_contains(decl_types, type) then
         scope = get_relevant_var_scope(n)
         if not scope then
             return

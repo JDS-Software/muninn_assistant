@@ -20,6 +20,7 @@ end
 function M.setup(user_input)
     if not vim.g.muninn_init then
         require("muninn.util.log").setup()
+        require("muninn.util.event_listeners").setup()
         init_commands()
         init_keymap()
         vim.g.muninn_init = true
