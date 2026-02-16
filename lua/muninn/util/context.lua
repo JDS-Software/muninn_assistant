@@ -104,6 +104,9 @@ local function get_relevant_fn_scope(n)
 					scope = grandparent
 				end
 				break
+			elseif at == "decorated_definition" then
+				scope = ancestor
+				break
 			elseif vim.list_contains(decl_types, at) then
 				scope = ancestor
 				break
@@ -119,6 +122,9 @@ end
 local function get_relevant_struct_scope(n)
 	local parent = n:parent()
 	if parent and parent:type() == "type_definition" then
+		return parent
+	end
+	if parent and parent:type() == "decorated_definition" then
 		return parent
 	end
 	return parent and parent:type() == "declaration" and parent or n
@@ -165,6 +171,7 @@ local function process_node(n, source, results, seen)
 		"union_specifier",
 		"type_declaration",
 		"class_declaration",
+		"class_definition",
 		"interface_declaration",
 		"type_alias_declaration",
 		"enum_declaration",
