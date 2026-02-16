@@ -36,6 +36,7 @@ local test_modules = {
 	"context.go_test",
 	"context.javascript_test",
 	"context.typescript_test",
+	"context.python_test",
 }
 
 -- Test statistics
@@ -109,38 +110,39 @@ function assert_equal(expected, actual, message)
 				message or "Assertion failed",
 				vim.inspect(expected),
 				vim.inspect(actual)
-			)
+			),
+			2
 		)
 	end
 end
 
 function assert_nil(value, message)
 	if value ~= nil then
-		error(string.format("%s\nExpected nil but got: %s", message or "Assertion failed", vim.inspect(value)))
+		error(string.format("%s\nExpected nil but got: %s", message or "Assertion failed", vim.inspect(value)), 2)
 	end
 end
 
 function assert_not_nil(value, message)
 	if value == nil then
-		error(message or "Expected non-nil value")
+		error(message or "Expected non-nil value", 2)
 	end
 end
 
 function assert_true(value, message)
 	if value ~= true then
-		error(message or "Expected true")
+		error(message or "Expected true", 2)
 	end
 end
 
 function assert_false(value, message)
 	if value ~= false then
-		error(message or "Expected false")
+		error(message or "Expected false", 2)
 	end
 end
 
 function assert_match(pattern, str, message)
 	if not str or not str:match(pattern) then
-		error(string.format("%s\nPattern: %s\nString: %s", message or "Pattern match failed", pattern, tostring(str)))
+		error(string.format("%s\nPattern: %s\nString: %s", message or "Pattern match failed", pattern, tostring(str)), 2)
 	end
 end
 
