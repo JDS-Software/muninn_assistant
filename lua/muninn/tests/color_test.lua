@@ -7,9 +7,15 @@ local color = require("muninn.util.color")
 
 local function assert_rgb(result, r, g, b)
     local eps = 1e-9
-    assert_true(math.abs(result.r - r) < eps, string.format("r: expected %.4f got %.4f", r, result.r))
-    assert_true(math.abs(result.g - g) < eps, string.format("g: expected %.4f got %.4f", g, result.g))
-    assert_true(math.abs(result.b - b) < eps, string.format("b: expected %.4f got %.4f", b, result.b))
+    if math.abs(result.r - r) >= eps then
+        error(string.format("r: expected %.4f got %.4f", r, result.r), 2)
+    end
+    if math.abs(result.g - g) >= eps then
+        error(string.format("g: expected %.4f got %.4f", g, result.g), 2)
+    end
+    if math.abs(result.b - b) >= eps then
+        error(string.format("b: expected %.4f got %.4f", b, result.b), 2)
+    end
 end
 
 local function test_new_color()
@@ -23,45 +29,53 @@ end
 local function test_gradient_linear()
     --identity
     local same = color.new_color(0.3, 0.5, 0.7)
-    assert_rgb(color.gradient_linear(same, same, 0.5), 0.3, 0.5, 0.7)
+    local grad = color.new_linear_gradient(same, same)
+    assert_rgb(grad(0.5), 0.3, 0.5, 0.7)
 
     -- endpoints
     local s = color.new_color(1, 0, 0)
     local e = color.new_color(0, 0, 1)
-    assert_rgb(color.gradient_linear(s, e, 0), 1, 0, 0)
-    assert_rgb(color.gradient_linear(s, e, 1), 0, 0, 1)
+    grad = color.new_linear_gradient(s, e)
+    assert_rgb(grad(0), 1, 0, 0)
+    assert_rgb(grad(1), 0, 0, 1)
 
     -- interpolation
-    local s = color.new_color(0, 0, 0)
-    local e = color.new_color(1, 1, 1)
-    assert_rgb(color.gradient_linear(s, e, 0.25), 0.25, 0.25, 0.25)
-    assert_rgb(color.gradient_linear(s, e, 0.5), 0.5, 0.5, 0.5)
+    s = color.new_color(0, 0, 0)
+    e = color.new_color(1, 0, 0)
+    grad = color.new_linear_gradient(s, e)
+    for i = 1, 100, 1 do
+        local x = i / 100
+        local irp = grad(x)
+        assert_rgb(irp, x, 0, 0)
+    end
 
     --clamping
-    local s = color.new_color(1, 0, 0)
-    local e = color.new_color(0, 0, 1)
-    assert_rgb(color.gradient_linear(s, e, -0.5), 1, 0, 0)
-    assert_rgb(color.gradient_linear(s, e, 1.5), 0, 0, 1)
+    s = color.new_color(1, 0, 0)
+    e = color.new_color(0, 0, 1)
+    grad = color.new_linear_gradient(s, e)
+    assert_rgb(grad(-0.5), 1, 0, 0)
+    assert_rgb(grad(1.5), 0, 0, 1)
 end
 
 local function test_gradient_triangular()
     -- key points
-    local mid = color.new_color(0, 1, 0)
-    local grad = color.gradient_triangular(mid)
+    local m = color.new_color(0, 1, 0)
     local s = color.new_color(1, 0, 0)
     local e = color.new_color(0, 0, 1)
-    assert_rgb(grad(s, e, 0), 1, 0, 0)        -- start
-    assert_rgb(grad(s, e, 0.25), 0.5, 0.5, 0) -- halfway to mid
-    assert_rgb(grad(s, e, 0.5), 0, 1, 0)      -- mid
-    assert_rgb(grad(s, e, 0.75), 0, 0.5, 0.5) -- halfway from mid
-    assert_rgb(grad(s, e, 1), 0, 0, 1)        -- end
+    local grad = color.new_triangular_gradient(s, m, e)
+    assert_rgb(grad(0), 1, 0, 0)        -- start
+    assert_rgb(grad(0.25), 0.5, 0.5, 0) -- halfway to mid
+    assert_rgb(grad(0.5), 0, 1, 0)      -- mid
+    assert_rgb(grad(0.75), 0, 0.5, 0.5) -- halfway from mid
+    assert_rgb(grad(1), 0, 0, 1)        -- end
 
     --clamping
-    local grad = color.gradient_triangular(color.new_color(0, 1, 0))
-    local s = color.new_color(1, 0, 0)
-    local e = color.new_color(0, 0, 1)
-    assert_rgb(grad(s, e, -1), 1, 0, 0)
-    assert_rgb(grad(s, e, 2), 0, 0, 1)
+    s = color.new_color(1, 0, 0)
+    m = color.new_color(0, 1, 0)
+    e = color.new_color(0, 0, 1)
+    grad = color.new_triangular_gradient(s, m, e)
+    assert_rgb(grad(-1), 1, 0, 0)
+    assert_rgb(grad(2), 0, 0, 1)
 end
 
 local function test_color_strings()
