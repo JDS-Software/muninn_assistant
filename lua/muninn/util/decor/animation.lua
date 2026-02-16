@@ -1,73 +1,7 @@
-local M = {}
 local color = require("muninn.util.color")
 local logger = require("muninn.util.log").default
 local time = require("muninn.util.time")
-
----@alias MnBanner fun(at_frame: number): string
----@alias MnAString fun(idx:number): string
-local function to_astring(str)
-    local backing = vim.fn.split(str, "\\zs")
-    return function(idx)
-        return backing[(idx % #backing) + 1] or ""
-    end
-end
-
-local function to_double_wide_astring(stra, strb)
-    local backinga = vim.fn.split(stra, "\\zs")
-    local backingb = vim.fn.split(strb, "\\zs")
-    return function(idx)
-        local a = backinga[(idx % #backinga) + 1] or ""
-        local b = backingb[(idx % #backingb) + 1] or ""
-        return a .. b
-    end
-end
-
-M.looper = to_astring("⠛⠹⢸⣰⣤⣆⡇⠏")
-M.sandpile = to_astring("⢀⣀⣠⣤⣴⣶⣾⣿⣶⣤⣀⢀  ")
-M.crawler = to_astring("⢀⣀⣠⣤⣴⣶⣾⣿⡿⠿⠟⠛⠋⠉⠁")
-M.faller = to_astring("⠁⠉⠋⠛⠟⠿⡿⣿⣾⣶⣴⣤⣠⣀⢀")
-M.spinner = to_astring("⠙⠸⢰⣠⣄⡤⢤⣠⣄⡆⠇⠋⠙⠚⠓⠋")
-M.r_spinner = to_astring("⠋⠇⡆⣄⣠⢤⡤⣄⣠⢰⠸⠙⠋⠓⠚⠙")
-
---⠉⠉ ⠉⠋ ⠙⠝ ⠫⡫ ⢝⢝ ⡫⡫ ⢝⢝ ⡫⡫ ⢝⢝ ⡫⡩ ⢍⢉ ⡉⠉ ⠉⠉ ⠉⠉ ⠉⠉ ⠋⠉ ⠍⠉ ⡉⠉ ⠉⠉ ⠉⠉
-M.rainer = to_double_wide_astring(
-    "⠉⠉⠙⠫⢝⡫⢝⡫⢍⡉⠋⠍⡉⠉⠉",
-    "⠉⠋⠝⡫⢝⡫⢝⡩⢉⠉⠉⠋⠍⡉⠉"
-)
-M.sworl = to_double_wide_astring(
-    "⠋⠇⡆⣄⣠⢤⡤⣄⣠⢰⠸⠙⠋⠓⠚⠙",
-    "⠙⠸⢰⣠⣄⡤⢤⣠⣄⡆⠇⠋⠙⠚⠓⠋"
-)
-M.blackbird_icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
-
-local function debug_banner()
-    return function(at_frame)
-        local animations =
-        { to_astring(""), M.looper, M.sandpile, M.faller, M.spinner, M.r_spinner, M.rainer, to_astring("") }
-        local msg = "DEBUG| "
-        for cheater, anim in ipairs(animations) do
-            local char = anim(at_frame)
-            if not char then
-                logger():log("ERROR", "Error at " .. cheater)
-                char = ""
-            end
-            msg = msg .. char .. "| "
-        end
-        return msg .. "DEBUG"
-    end
-end
-
----@param message string
----@param outer_animation MnAString
----@param outer_timefactor number
-function M.new_mono_animation_banner(message, outer_animation, outer_timefactor)
-    ---@param at_frame number
-    return function(at_frame)
-        local o = outer_animation(math.floor(at_frame / outer_timefactor))
-
-        return o .. " " .. M.blackbird_icon .. " " .. message .. " " .. M.blackbird_icon .. " " .. o
-    end
-end
+local bann = require("muninn.util.decor.banner")
 
 ---@alias MnAnimationCallback fun()
 
@@ -81,12 +15,59 @@ end
 ---@field duration MnTime
 ---@field oscillator MnOscillator
 ---@field anim_cb MnAnimationCallback
+---@field last_banner string cached prior-frame banner message
 local MnAnimation = {}
 MnAnimation.__index = MnAnimation
 
 ---@param ctx MnContext
 function MnAnimation:end_animation(ctx)
     ctx.an_context:reset(ctx.fn_context.bufnr)
+end
+
+function MnAnimation:_update_banner(ctx, message)
+    local start_options = {
+        id = ctx.an_context.ext_mark_start,
+        virt_lines = {
+            {
+                { message, ctx.an_context.hl_group },
+            },
+        },
+        virt_text_pos = "inline",
+        virt_lines_above = true,
+    }
+
+    local sPos = vim.api.nvim_buf_get_extmark_by_id(
+        ctx.fn_context.bufnr,
+        ctx.an_context.ext_namespace,
+        ctx.an_context.ext_mark_start,
+        {}
+    )
+
+    vim.api.nvim_buf_set_extmark(
+        ctx.fn_context.bufnr,
+        ctx.an_context.ext_namespace,
+        sPos[1],
+        sPos[2],
+        start_options
+    )
+
+    local end_options = {
+        id = ctx.an_context.ext_mark_end,
+        virt_lines = {
+            {
+                { message, ctx.an_context.hl_group },
+            },
+        },
+        virt_text_pos = "eol",
+    }
+    local ePos = vim.api.nvim_buf_get_extmark_by_id(
+        ctx.fn_context.bufnr,
+        ctx.an_context.ext_namespace,
+        ctx.an_context.ext_mark_end,
+        {}
+    )
+    vim.api.nvim_buf_set_extmark(ctx.fn_context.bufnr, ctx.an_context.ext_namespace, ePos[1], ePos[2],
+        end_options)
 end
 
 function MnAnimation:_create_anim_cb(ctx)
@@ -99,51 +80,14 @@ function MnAnimation:_create_anim_cb(ctx)
         self:frame()
 
         vim.api.nvim_set_hl(0, ctx.an_context.hl_group, self:get_hl())
+
         local message = self:message()
+        if message ~= self.last_banner then
+            self:_update_banner(ctx, message)
+            self.last_banner = message
+        end
 
-        local start_options = {
-            id = ctx.an_context.ext_mark_start,
-            virt_lines = {
-                {
-                    { message, ctx.an_context.hl_group },
-                },
-            },
-            virt_text_pos = "inline",
-            virt_lines_above = true,
-        }
-
-        local sPos = vim.api.nvim_buf_get_extmark_by_id(
-            ctx.fn_context.bufnr,
-            ctx.an_context.ext_namespace,
-            ctx.an_context.ext_mark_start,
-            {}
-        )
-
-        vim.api.nvim_buf_set_extmark(
-            ctx.fn_context.bufnr,
-            ctx.an_context.ext_namespace,
-            sPos[1],
-            sPos[2],
-            start_options
-        )
-
-        local end_options = {
-            id = ctx.an_context.ext_mark_end,
-            virt_lines = {
-                {
-                    { message, ctx.an_context.hl_group },
-                },
-            },
-            virt_text_pos = "eol",
-        }
-        local ePos = vim.api.nvim_buf_get_extmark_by_id(
-            ctx.fn_context.bufnr,
-            ctx.an_context.ext_namespace,
-            ctx.an_context.ext_mark_end,
-            {}
-        )
-        vim.api.nvim_buf_set_extmark(ctx.fn_context.bufnr, ctx.an_context.ext_namespace, ePos[1], ePos[2], end_options)
-        vim.defer_fn(ctx.an_context.update_cb, self:get_wait())
+        vim.defer_fn(self.anim_cb, self:get_wait())
     end
 end
 
@@ -187,10 +131,13 @@ function MnAnimation:start(ctx)
     logger():log("INFO", "annotation initialization")
 
 
-    ctx.an_context.update_cb = self:_create_anim_cb(ctx)
+    self.anim_cb = self:_create_anim_cb(ctx)
     logger():log("INFO", "launching animation")
-    ctx.an_context.update_cb()
+    self.anim_cb()
 end
+
+--- Animation factories
+local M = {}
 
 ---Creates a new animation instance with the specified parameters
 ---@param banner MnBanner The text to display in the center of the animation
@@ -208,12 +155,13 @@ function M.new_animation(banner, fg_gradient, bg_gradient, duration)
         frame_number = 0,
         duration = duration,
         oscillator = time.new_oscillator(duration),
+        last_banner = ""
     }, MnAnimation)
 end
 
 ---@return MnAnimation
 function M.new_autocomplete_animation()
-    local banner = M.new_mono_animation_banner(" Muninn Autocompleting ", M.rainer, 3)
+    local banner = bann.new_mono_animation_banner(" Muninn Autocompleting ", bann.rainer, 3)
 
     local background = color.get_theme_background()
     local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
@@ -225,8 +173,7 @@ end
 
 ---@return MnAnimation
 function M.new_query_animation()
-    local banner = M.new_mono_animation_banner(" Muninn Working ", M.sworl, 2)
-
+    local banner = bann.new_mono_animation_banner(" Muninn Working ", bann.sworl, 2)
 
     local background = color.get_theme_background()
     local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
@@ -237,14 +184,14 @@ function M.new_query_animation()
 end
 
 function M.new_demo_animation()
-    local banner = debug_banner()
+    local banner = bann.debug_banner()
     local anim = M.new_animation(banner, color.new_linear_gradient(color.black, color.muninn_blue), color.white:to_grad(),
         time.new_time(1))
     return anim
 end
 
 function M.new_failure_animation()
-    local banner = M.new_mono_animation_banner(" Muninn Failed — :MuninnLog for details ", M.faller, 1)
+    local banner = bann.new_mono_animation_banner(" Muninn Failed — :MuninnLog for details ", bann.faller, 1)
 
     local bg_gradient = color.new_triangular_gradient(color.black, color.get_theme_background(), color.black)
     local anim = M.new_animation(banner, color.new_triangular_gradient(color.red, color.white, color.white), bg_gradient,
