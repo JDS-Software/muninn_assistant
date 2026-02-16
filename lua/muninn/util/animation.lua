@@ -69,6 +69,8 @@ function M.new_mono_animation_banner(message, outer_animation, outer_timefactor)
     end
 end
 
+---@alias MnAnimationCallback fun()
+
 ---@class MnAnimation
 ---@field t_start MnTime
 ---@field target_fps number
@@ -78,8 +80,72 @@ end
 ---@field bg_gradient MnColorGradientFn
 ---@field duration MnTime
 ---@field oscillator MnOscillator
+---@field anim_cb MnAnimationCallback
 local MnAnimation = {}
 MnAnimation.__index = MnAnimation
+
+---@param ctx MnContext
+function MnAnimation:end_animation(ctx)
+    ctx.an_context:reset(ctx.fn_context.bufnr)
+end
+
+function MnAnimation:_create_anim_cb(ctx)
+    return function()
+        if ctx:finished() then
+            logger():log("INFO", "animation over")
+            self:end_animation(ctx)
+            return
+        end
+        self:frame()
+
+        vim.api.nvim_set_hl(0, ctx.an_context.hl_group, self:get_hl())
+        local message = self:message()
+
+        local start_options = {
+            id = ctx.an_context.ext_mark_start,
+            virt_lines = {
+                {
+                    { message, ctx.an_context.hl_group },
+                },
+            },
+            virt_text_pos = "inline",
+            virt_lines_above = true,
+        }
+
+        local sPos = vim.api.nvim_buf_get_extmark_by_id(
+            ctx.fn_context.bufnr,
+            ctx.an_context.ext_namespace,
+            ctx.an_context.ext_mark_start,
+            {}
+        )
+
+        vim.api.nvim_buf_set_extmark(
+            ctx.fn_context.bufnr,
+            ctx.an_context.ext_namespace,
+            sPos[1],
+            sPos[2],
+            start_options
+        )
+
+        local end_options = {
+            id = ctx.an_context.ext_mark_end,
+            virt_lines = {
+                {
+                    { message, ctx.an_context.hl_group },
+                },
+            },
+            virt_text_pos = "eol",
+        }
+        local ePos = vim.api.nvim_buf_get_extmark_by_id(
+            ctx.fn_context.bufnr,
+            ctx.an_context.ext_namespace,
+            ctx.an_context.ext_mark_end,
+            {}
+        )
+        vim.api.nvim_buf_set_extmark(ctx.fn_context.bufnr, ctx.an_context.ext_namespace, ePos[1], ePos[2], end_options)
+        vim.defer_fn(ctx.an_context.update_cb, self:get_wait())
+    end
+end
 
 ---@return number ms_to_wait
 function MnAnimation:get_wait()
@@ -114,6 +180,16 @@ function MnAnimation:get_hl()
     local bg = self.bg_gradient(self.oscillator:at(self:get_frame_time()))
 
     return { fg = tostring(fg), bg = tostring(bg) }
+end
+
+---@param ctx MnContext
+function MnAnimation:start(ctx)
+    logger():log("INFO", "annotation initialization")
+
+
+    ctx.an_context.update_cb = self:_create_anim_cb(ctx)
+    logger():log("INFO", "launching animation")
+    ctx.an_context.update_cb()
 end
 
 ---Creates a new animation instance with the specified parameters

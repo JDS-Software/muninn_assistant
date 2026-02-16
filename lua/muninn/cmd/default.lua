@@ -1,4 +1,3 @@
-local annotation = require("muninn.util.annotation")
 local animation = require("muninn.util.animation")
 local context = require("muninn.util.context")
 local logger = require("muninn.util.log").default
@@ -12,9 +11,8 @@ return function()
 
         logger():log("PROMPT", request_prompt)
 
-        local anim = animation.new_autocomplete_animation()
         ctx:next_state()
-        annotation.start_annotation(ctx, anim)
+        animation.new_autocomplete_animation():start(ctx)
 
         local sRow, sCol = ctx.fn_context:get_start()
         vim.api.nvim_win_set_cursor(0, { sRow + 1, sCol })

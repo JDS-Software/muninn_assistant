@@ -1,4 +1,3 @@
-local annotation = require("muninn.util.annotation")
 local animation = require("muninn.util.animation")
 local bufutil = require("muninn.util.bufutil")
 local claude = require("muninn.util.claude")
@@ -12,7 +11,10 @@ local function alert_failure(ctx)
 
     ctx:reset_state()
     ctx:next_state()
-    annotation.start_annotation(ctx, anim)
+
+    anim:start(ctx)
+
+
     vim.defer_fn(function()
         ctx:next_state()
     end, 5000)
@@ -25,10 +27,11 @@ return function()
         local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
 
         logger():log("AUTOCOMPLETE PROMPT", request_prompt)
-        local anim = animation.new_autocomplete_animation()
 
         ctx:next_state()
-        annotation.start_annotation(ctx, anim)
+
+        local anim = animation.new_autocomplete_animation()
+        anim:start(ctx)
 
         ---@param result ClaudeResult
         local result_cb = function(result)

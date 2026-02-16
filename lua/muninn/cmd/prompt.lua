@@ -1,5 +1,4 @@
 local prompt = require("muninn.util.prompt")
-local annotation = require("muninn.util.annotation")
 local claude = require("muninn.util.claude")
 local bufutil = require("muninn.util.bufutil")
 local prompt_dialogue = require("muninn.components.prompt")
@@ -9,11 +8,10 @@ local animation = require("muninn.util.animation")
 ---
 ---@param ctx MnContext
 local function alert_failure(ctx)
-    local anim = animation.new_failure_animation()
-
     ctx:reset_state()
     ctx:next_state()
-    annotation.start_annotation(ctx, anim)
+    animation.new_failure_animation():start(ctx)
+
     vim.defer_fn(function()
         ctx:next_state()
     end, 5000)
@@ -31,8 +29,8 @@ return function()
             local request_prompt = prompt.build_prompt(ctx, user_input)
 
             ctx:next_state()
-            local anim = animation.new_query_animation()
-            annotation.start_annotation(ctx, anim)
+
+            animation.new_query_animation():start(ctx)
 
             ---@param result ClaudeResult
             local result_cb = function(result)
