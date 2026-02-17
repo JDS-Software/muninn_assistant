@@ -72,40 +72,38 @@ function MnFrame:to_lines()
     return results
 end
 
+---@param px number
+---@param py number
+function MnFrame:set_pixel(px, py)
+    local col = math.floor(px + 0.5) + 1
+    local row = math.floor(py + 0.5) + 1
+
+    if col >= 1 and col <= self.width and row >= 1 and row <= self.height then
+        local idx = (row - 1) * self.width + col
+        self.bits[idx] = 1
+    end
+end
+
+--- Midpoint circle algorithm (Bresenham's circle algorithm) handles circles with centers outside the frame
 ---@param center_x number x coordinate of the center, in pixels
 ---@param center_y number y coordinate of the center, in pixels
 ---@param radius number radius of the circle in pixels
 function MnFrame:circle(center_x, center_y, radius)
-    -- Midpoint circle algorithm (Bresenham's circle algorithm)
-    -- Handles circles with centers outside the frame
     local x = radius
     local y = 0
     local decision = 1 - radius
 
-    -- Helper to safely set a pixel if it's within bounds
-    local function set_pixel(px, py)
-        -- Convert to 1-indexed coordinates
-        local col = math.floor(px + 0.5) + 1
-        local row = math.floor(py + 0.5) + 1
-
-        -- Check bounds
-        if col >= 1 and col <= self.width and row >= 1 and row <= self.height then
-            local idx = (row - 1) * self.width + col
-            self.bits[idx] = 1
-        end
-    end
-
     -- Draw 8 symmetric points for each (x, y) on the circle
     while x >= y do
         -- All 8 octants
-        set_pixel(center_x + x, center_y + y)
-        set_pixel(center_x + y, center_y + x)
-        set_pixel(center_x - y, center_y + x)
-        set_pixel(center_x - x, center_y + y)
-        set_pixel(center_x - x, center_y - y)
-        set_pixel(center_x - y, center_y - x)
-        set_pixel(center_x + y, center_y - x)
-        set_pixel(center_x + x, center_y - y)
+        self:set_pixel(center_x + x, center_y + y)
+        self:set_pixel(center_x + y, center_y + x)
+        self:set_pixel(center_x - y, center_y + x)
+        self:set_pixel(center_x - x, center_y + y)
+        self:set_pixel(center_x - x, center_y - y)
+        self:set_pixel(center_x - y, center_y - x)
+        self:set_pixel(center_x + y, center_y - x)
+        self:set_pixel(center_x + x, center_y - y)
 
         y = y + 1
 
@@ -118,10 +116,10 @@ function MnFrame:circle(center_x, center_y, radius)
     end
 end
 
----@param bits table<integer>
 ---@param width integer
 ---@param height integer
-function M.new_frame(bits, width, height)
+---@param bits table<integer>?
+function M.new_frame(width, height, bits)
     if width % 4 ~= 0 then
         error("frame width must be multiple of 4, got " .. width, 2)
     end
@@ -129,8 +127,15 @@ function M.new_frame(bits, width, height)
         error("frame height must be multiple of 4, got " .. height, 2)
     end
     local len = width * height
-    if len ~= #bits then
-        error("bits length must be width x height (" .. len .. "), got " .. #bits, 2)
+    if not bits then
+        bits = {}
+        for i = 1, len do
+            bits[i] = 0
+        end
+    else
+        if #bits ~= len then
+            error("Provided bit array must have size " .. len .. "; got " .. #bits, 2)
+        end
     end
     return setmetatable({ bits = bits, width = width, height = height }, MnFrame)
 end

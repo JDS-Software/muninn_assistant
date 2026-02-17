@@ -8,18 +8,19 @@ local render = require("muninn.util.decor.render")
 
 local function write_file(path, content)
     local f = io.open(path, "w")
-    f:write(content)
-    f:close()
+    if f then
+        f:write(content)
+        f:close()
+    end
 end
 
 local function read_file(path)
     local f = io.open(path, "r")
-    local content = f:read("*a")
-    f:close()
-    return content
-end
-
-local function say_hello()
+    if f then
+        local content = f:read("*a")
+        f:close()
+        return content
+    end
 end
 
 local function test_write()
@@ -30,7 +31,7 @@ local function test_write()
         0, 1, 1, 0,
         1, 0, 0, 1,
     }
-    local frame = render.new_frame(bits, 4, 4)
+    local frame = render.new_frame(4, 4, bits)
     local path = os.tmpname()
 
     local ok = pbm.write(frame, path)
@@ -49,11 +50,13 @@ local function test_read()
 
     local frame = pbm.read(path)
     assert_not_nil(frame, "read should return a frame")
-    assert_equal(4, frame.width, "width should be 4")
-    assert_equal(4, frame.height, "height should be 4")
-    assert_equal(1, frame.bits[1], "first bit should be 1")
-    assert_equal(0, frame.bits[2], "second bit should be 0")
-    assert_equal(1, frame.bits[16], "last bit should be 1")
+    if frame then
+        assert_equal(4, frame.width, "width should be 4")
+        assert_equal(4, frame.height, "height should be 4")
+        assert_equal(1, frame.bits[1], "first bit should be 1")
+        assert_equal(0, frame.bits[2], "second bit should be 0")
+        assert_equal(1, frame.bits[16], "last bit should be 1")
+    end
 
     os.remove(path)
 end
@@ -64,8 +67,10 @@ local function test_read_with_comments()
 
     local frame = pbm.read(path)
     assert_not_nil(frame, "read should handle comments")
-    assert_equal(4, frame.width)
-    assert_equal(4, frame.height)
+    if frame then
+        assert_equal(4, frame.width)
+        assert_equal(4, frame.height)
+    end
 
     os.remove(path)
 end
@@ -76,10 +81,12 @@ local function test_read_with_inline_comments()
 
     local frame = pbm.read(path)
     assert_not_nil(frame, "read should handle inline comments")
-    assert_equal(4, frame.width)
-    assert_equal(4, frame.height)
-    assert_equal(1, frame.bits[1], "first bit should be 1")
-    assert_equal(0, frame.bits[2], "second bit should be 0")
+    if frame then
+        assert_equal(4, frame.width)
+        assert_equal(4, frame.height)
+        assert_equal(1, frame.bits[1], "first bit should be 1")
+        assert_equal(0, frame.bits[2], "second bit should be 0")
+    end
 
     os.remove(path)
 end
@@ -96,17 +103,38 @@ local function test_round_trip()
         0, 1, 1, 0, 0, 1, 1, 0,
         0, 0, 1, 0, 1, 0, 0, 0,
     }
-    local original = render.new_frame(bits, 8, 8)
+    local original = render.new_frame(8, 8, bits)
     local path = os.tmpname()
 
     pbm.write(original, path)
     local restored = pbm.read(path)
 
     assert_not_nil(restored, "round trip should produce a frame")
-    assert_equal(original.width, restored.width, "width should survive round trip")
-    assert_equal(original.height, restored.height, "height should survive round trip")
-    for i = 1, #original.bits do
-        assert_equal(original.bits[i], restored.bits[i], "bit " .. i .. " should survive round trip")
+    if restored then
+        assert_equal(original.width, restored.width, "width should survive round trip")
+        assert_equal(original.height, restored.height, "height should survive round trip")
+        for i = 1, #original.bits do
+            assert_equal(original.bits[i], restored.bits[i], "bit " .. i .. " should survive round trip")
+        end
+    end
+
+    os.remove(path)
+end
+
+local function test_read_no_spaces()
+    local path = os.tmpname()
+    write_file(path, "P1\n4 4\n1001\n0110\n0110\n1001\n")
+
+    local frame = pbm.read(path)
+    assert_not_nil(frame, "read should handle no-space pixel data")
+    if frame then
+        assert_equal(4, frame.width)
+        assert_equal(4, frame.height)
+        assert_equal(1, frame.bits[1], "first bit should be 1")
+        assert_equal(0, frame.bits[2], "second bit should be 0")
+        assert_equal(0, frame.bits[3], "third bit should be 0")
+        assert_equal(1, frame.bits[4], "fourth bit should be 1")
+        assert_equal(1, frame.bits[16], "last bit should be 1")
     end
 
     os.remove(path)
@@ -147,6 +175,7 @@ function M.run()
     runner:test("read PBM with comments", test_read_with_comments)
     runner:test("read PBM with inline comments", test_read_with_inline_comments)
     runner:test("PBM round trip", test_round_trip)
+    runner:test("read PBM with no spaces", test_read_no_spaces)
     runner:test("read PBM error cases", test_read_errors)
 
     runner:run()
