@@ -17,7 +17,7 @@ local bann = require("muninn.util.decor.banner")
 ---@field duration MnTime
 ---@field oscillator MnOscillator
 ---@field anim_cb MnAnimationCallback
----@field last_banner string cached prior-frame banner message
+---@field last_banner table<string> cached prior-frame banner message
 local MnAnimation = {}
 MnAnimation.__index = MnAnimation
 
@@ -26,14 +26,23 @@ function MnAnimation:end_animation(ctx)
     ctx.an_context:reset(ctx.fn_context.bufnr)
 end
 
+---@param ctx MnContext
+---@param message table<string>
+function MnAnimation:get_virt_lines(ctx, message)
+    local results = {}
+    for _, line in ipairs(message) do
+        table.insert(results, { line, ctx.an_context.hl_group })
+    end
+    return results
+end
+
+---@param ctx MnContext
+---@param message table<string>
 function MnAnimation:_update_banner(ctx, message)
+    local virt_lines = self:get_virt_lines(ctx, message)
     local start_options = {
         id = ctx.an_context.ext_mark_start,
-        virt_lines = {
-            {
-                { message, ctx.an_context.hl_group },
-            },
-        },
+        virt_lines = { virt_lines },
         virt_text_pos = "inline",
         virt_lines_above = true,
     }
@@ -45,6 +54,7 @@ function MnAnimation:_update_banner(ctx, message)
         {}
     )
 
+    logger():log("DEBUG", vim.inspect(start_options))
     vim.api.nvim_buf_set_extmark(
         ctx.fn_context.bufnr,
         ctx.an_context.ext_namespace,
@@ -55,11 +65,7 @@ function MnAnimation:_update_banner(ctx, message)
 
     local end_options = {
         id = ctx.an_context.ext_mark_end,
-        virt_lines = {
-            {
-                { message, ctx.an_context.hl_group },
-            },
-        },
+        virt_lines = { virt_lines },
         virt_text_pos = "eol",
     }
     local ePos = vim.api.nvim_buf_get_extmark_by_id(
@@ -84,7 +90,8 @@ function MnAnimation:_create_anim_cb(ctx)
         vim.api.nvim_set_hl(0, ctx.an_context.hl_group, self:get_hl())
 
         local message = self:message()
-        if message ~= self.last_banner then
+        logger():log("DEBUG2", vim.inspect(message))
+        if not vim.deep_equal(message, self.last_banner) then
             self:_update_banner(ctx, message)
             self.last_banner = message
         end
@@ -103,7 +110,7 @@ function MnAnimation:frame()
     self.frame_number = self.frame_number + 1
 end
 
----@return string message
+---@return table<string> message
 function MnAnimation:message()
     return self.banner(self.frame_number)
 end
@@ -156,7 +163,7 @@ function M.new_animation(banner, fg_gradient, bg_gradient, duration)
         frame_number = 0,
         duration = duration,
         oscillator = time.new_oscillator(duration),
-        last_banner = ""
+        last_banner = {}
     }, MnAnimation)
 end
 
