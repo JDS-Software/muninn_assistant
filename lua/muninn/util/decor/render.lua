@@ -72,6 +72,52 @@ function MnFrame:to_lines()
     return results
 end
 
+---@param center_x number x coordinate of the center, in pixels
+---@param center_y number y coordinate of the center, in pixels
+---@param radius number radius of the circle in pixels
+function MnFrame:circle(center_x, center_y, radius)
+    -- Midpoint circle algorithm (Bresenham's circle algorithm)
+    -- Handles circles with centers outside the frame
+    local x = radius
+    local y = 0
+    local decision = 1 - radius
+
+    -- Helper to safely set a pixel if it's within bounds
+    local function set_pixel(px, py)
+        -- Convert to 1-indexed coordinates
+        local col = math.floor(px + 0.5) + 1
+        local row = math.floor(py + 0.5) + 1
+
+        -- Check bounds
+        if col >= 1 and col <= self.width and row >= 1 and row <= self.height then
+            local idx = (row - 1) * self.width + col
+            self.bits[idx] = 1
+        end
+    end
+
+    -- Draw 8 symmetric points for each (x, y) on the circle
+    while x >= y do
+        -- All 8 octants
+        set_pixel(center_x + x, center_y + y)
+        set_pixel(center_x + y, center_y + x)
+        set_pixel(center_x - y, center_y + x)
+        set_pixel(center_x - x, center_y + y)
+        set_pixel(center_x - x, center_y - y)
+        set_pixel(center_x - y, center_y - x)
+        set_pixel(center_x + y, center_y - x)
+        set_pixel(center_x + x, center_y - y)
+
+        y = y + 1
+
+        if decision <= 0 then
+            decision = decision + 2 * y + 1
+        else
+            x = x - 1
+            decision = decision + 2 * (y - x) + 1
+        end
+    end
+end
+
 ---@param bits table<integer>
 ---@param width integer
 ---@param height integer
