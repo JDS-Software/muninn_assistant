@@ -33,6 +33,7 @@ local test_modules = {
 	"animation_test",
 	"bufutil_test",
 	"render_test",
+	"pbm_test",
 	"context.lua_test",
 	"context.c_test",
 	"context.go_test",
