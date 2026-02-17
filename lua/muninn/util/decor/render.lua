@@ -18,14 +18,14 @@ end
 ---@param byte table<integer>
 local function anneal_byte(byte)
 	return bit.bor(
-		bit.lshift(byte[1], 7),
-		bit.lshift(byte[2], 6),
-		bit.lshift(byte[3], 5),
-		bit.lshift(byte[4], 4),
-		bit.lshift(byte[5], 3),
-		bit.lshift(byte[6], 2),
-		bit.lshift(byte[7], 1),
-		byte[8]
+		byte[5],
+		bit.lshift(byte[6], 1),
+		bit.lshift(byte[7], 2),
+		bit.lshift(byte[8], 3),
+		bit.lshift(byte[1], 4),
+		bit.lshift(byte[2], 5),
+		bit.lshift(byte[3], 6),
+		bit.lshift(byte[4], 7)
 	)
 end
 
