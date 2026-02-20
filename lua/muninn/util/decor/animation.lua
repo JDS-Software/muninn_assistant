@@ -31,7 +31,7 @@ end
 function MnAnimation:get_virt_lines(ctx, message)
     local results = {}
     for _, line in ipairs(message) do
-        table.insert(results, { line, ctx.an_context.hl_group })
+        table.insert(results, { { line, ctx.an_context.hl_group } })
     end
     return results
 end
@@ -42,7 +42,7 @@ function MnAnimation:_update_banner(ctx, message)
     local virt_lines = self:get_virt_lines(ctx, message)
     local start_options = {
         id = ctx.an_context.ext_mark_start,
-        virt_lines = { virt_lines },
+        virt_lines = virt_lines,
         virt_text_pos = "inline",
         virt_lines_above = true,
     }
@@ -54,7 +54,6 @@ function MnAnimation:_update_banner(ctx, message)
         {}
     )
 
-    logger():log("DEBUG", vim.inspect(start_options))
     vim.api.nvim_buf_set_extmark(
         ctx.fn_context.bufnr,
         ctx.an_context.ext_namespace,
@@ -65,7 +64,7 @@ function MnAnimation:_update_banner(ctx, message)
 
     local end_options = {
         id = ctx.an_context.ext_mark_end,
-        virt_lines = { virt_lines },
+        virt_lines = virt_lines,
         virt_text_pos = "eol",
     }
     local ePos = vim.api.nvim_buf_get_extmark_by_id(
@@ -90,7 +89,6 @@ function MnAnimation:_create_anim_cb(ctx)
         vim.api.nvim_set_hl(0, ctx.an_context.hl_group, self:get_hl())
 
         local message = self:message()
-        logger():log("DEBUG2", vim.inspect(message))
         if not vim.deep_equal(message, self.last_banner) then
             self:_update_banner(ctx, message)
             self.last_banner = message
@@ -191,10 +189,12 @@ function M.new_query_animation()
     return anim
 end
 
-function M.new_demo_animation()
-    local banner = bann.debug_banner()
-    local anim = M.new_animation(banner, color.new_linear_gradient(color.black, color.muninn_blue), color.white:to_grad(),
-        time.new_time(1))
+---@param ctx MnContext
+function M.new_debug_animation(ctx)
+    local banner = bann.debug_banner(ctx)
+    local background = color.get_theme_background()
+    local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
+    local anim = M.new_animation(banner, color.text_gradient, bg_gradient, time.new_time(4))
     return anim
 end
 

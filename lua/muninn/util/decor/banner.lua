@@ -1,5 +1,7 @@
 local M = {}
 local logger = require("muninn.util.log").default
+local render = require("muninn.util.decor.render")
+local pbm = require("muninn.util.img.pbm")
 
 ---@alias MnBanner fun(at_frame: number): table<string>
 
@@ -49,33 +51,80 @@ M.rainer = M.to_double_wide_astring(rainer_left_str, rainer_right_str)
 M.sworl = M.to_double_wide_astring(r_spinner_str, spinner_str)
 M.blackbird_icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
 
-function M.debug_banner()
-    return function(at_frame)
-        local animations =
-        { M.to_astring(""), M.looper, M.sandpile, M.faller, M.spinner, M.r_spinner, M.rainer, M.to_astring("") }
-        local msg = "DEBUG| "
-        for cheater, anim in ipairs(animations) do
-            local char = anim(at_frame)
-            if not char then
-                logger():log("ERROR", "Error at " .. cheater)
-                char = ""
-            end
-            msg = msg .. char .. "| "
-        end
-        return msg .. "DEBUG"
+---@param ctx MnContext
+function M.debug_banner(ctx)
+    local img_path = ctx:get_file("animations/debug.pbm")
+    logger():log("INFO", "img_path: " .. img_path)
+    local img = pbm.read(img_path)
+    if img then
+        local banner = M.new_spritemap_banner("Spritemap Banner", img, 4)
+        return banner
     end
 end
 
 ---@param message string
----@param outer_animation MnAString
----@param outer_timefactor number
+---@param animation MnAString
+---@param timefactor number
 ---@return MnBanner
-function M.new_mono_animation_banner(message, outer_animation, outer_timefactor)
+function M.new_mono_animation_banner(message, animation, timefactor)
     ---@param at_frame number
     return function(at_frame)
-        local o = outer_animation(math.floor(at_frame / outer_timefactor))
+        local o = animation(math.floor(at_frame / timefactor))
 
         return { o .. " " .. M.blackbird_icon .. " " .. message .. " " .. M.blackbird_icon .. " " .. o }
+    end
+end
+
+---@param message string appended to bottom of image
+---@param images table<table<string>> flipbook of "images"
+---@param timefactor number
+---@return MnBanner
+function M.new_flipbook_banner(message, images, timefactor)
+    ---@param at_frame number
+    ---@return table<string>
+    return function(at_frame)
+        local idx = (math.floor(at_frame / timefactor) % #images) + 1
+        local stack = vim.deepcopy(images[idx])
+        stack[#stack] = stack[#stack] .. message .. " " .. M.blackbird_icon
+        return stack
+    end
+end
+
+---@param message string appended to bottom of image
+---@param image MnFrame frame atlas which can be subdivided into an animation. The image will be divided into equal parts based on the width
+---@param timefactor number
+---@return MnBanner
+function M.new_spritemap_banner(message, image, timefactor)
+    local lines = image:to_lines()
+    local parts = image.height / image.width
+    local rows_per_part = (#lines / parts) - 1
+    if rows_per_part - math.floor(rows_per_part) > 0 then
+        error("Image's height must be an exact multiple of its width", 2)
+    end
+    local frames = {}
+    for i = 0, parts - 1 do
+        logger():log("DEBUG", "i: " .. i)
+        local start_row = (i + 1) + ((i) * rows_per_part)
+        local end_row = (start_row + rows_per_part)
+        local frame = {}
+        logger():log("DEBUG", "searching: " .. start_row .. " to " .. end_row)
+        for j = start_row, end_row do
+            local line = lines[j]
+            logger():log("DEBUG", "line at: " .. j .. ": " .. line)
+            if j == end_row then
+                line = line .. message .. " " .. M.blackbird_icon
+            end
+            table.insert(frame, line)
+        end
+
+        table.insert(frames, frame)
+    end
+
+    ---@param at_frame number
+    ---@return table<string>
+    return function(at_frame)
+        local idx = (math.floor(at_frame / timefactor) % #frames) + 1
+        return frames[idx]
     end
 end
 

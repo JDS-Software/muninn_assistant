@@ -29,19 +29,7 @@ function M.write(frame, path)
     return true
 end
 
----@param path string
----@return MnFrame?
-function M.read(path)
-    local f = io.open(normalize_path(path), "r")
-    if not f then
-        return nil
-    end
-    local content = f:read("*a")
-    f:close()
-
-    -- Strip comments: # through end of line (PBM spec allows inline comments)
-    content = content:gsub("#[^\n]*", "")
-
+function M.from_string(content)
     local tokens = {}
     for token in content:gmatch("%S+") do
         tokens[#tokens + 1] = token
@@ -74,6 +62,21 @@ function M.read(path)
         return nil
     end
     return frame
+end
+
+---@param path string
+---@return MnFrame?
+function M.read(path)
+    local f = io.open(normalize_path(path), "r")
+    if not f then
+        return nil
+    end
+    local content = f:read("*a")
+    f:close()
+
+    -- Strip comments: # through end of line (PBM spec allows inline comments)
+    content = content:gsub("#[^\n]*", "")
+    return M.from_string(content)
 end
 
 return M
