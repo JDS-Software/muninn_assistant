@@ -137,10 +137,12 @@ end
 function MnAnimation:start(ctx)
     logger():log("INFO", "annotation initialization")
 
-
     self.anim_cb = self:_create_anim_cb(ctx)
     logger():log("INFO", "launching animation")
-    self.anim_cb()
+    if self.anim_cb then
+        ctx:next_state()
+        self.anim_cb()
+    end
 end
 
 --- Animation factories

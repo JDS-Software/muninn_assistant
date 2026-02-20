@@ -9,7 +9,6 @@ local animation = require("muninn.util.decor.animation")
 ---@param ctx MnContext
 local function alert_failure(ctx)
     ctx:reset_state()
-    ctx:next_state()
     animation.new_failure_animation():start(ctx)
 
     vim.defer_fn(function()
@@ -27,8 +26,6 @@ return function()
             end
 
             local request_prompt = prompt.build_prompt(ctx, user_input)
-
-            ctx:next_state()
 
             animation.new_query_animation():start(ctx)
 

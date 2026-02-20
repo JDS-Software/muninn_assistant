@@ -11,7 +11,6 @@ return function()
 
         logger():log("PROMPT", request_prompt)
 
-        ctx:next_state()
         animation.new_autocomplete_animation():start(ctx)
 
         local sRow, sCol = ctx.fn_context:get_start()

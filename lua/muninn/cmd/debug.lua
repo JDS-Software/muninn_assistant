@@ -9,7 +9,6 @@ return function()
         local anim = animation.new_debug_animation(ctx)
         logger():log("INFO", ctx.home_dir)
 
-        ctx:next_state()
         anim:start(ctx)
 
         vim.defer_fn(function()

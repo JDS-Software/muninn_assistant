@@ -10,7 +10,6 @@ local function alert_failure(ctx)
     local anim = animation.new_failure_animation()
 
     ctx:reset_state()
-    ctx:next_state()
 
     anim:start(ctx)
 
@@ -27,8 +26,6 @@ return function()
         local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
 
         logger():log("AUTOCOMPLETE PROMPT", request_prompt)
-
-        ctx:next_state()
 
         local anim = animation.new_autocomplete_animation()
         anim:start(ctx)
