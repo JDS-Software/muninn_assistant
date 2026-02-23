@@ -21,6 +21,7 @@ local function init_keymap()
     vim.keymap.set({ "n" }, "<leader>mq", ":MuninnQuestion<CR>", { silent = true, desc = "Muninn Question" })
 end
 
+-- This exists on purpose and does nothing on purpose.
 local function noop()
     --do nothing
 end
