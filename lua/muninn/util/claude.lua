@@ -72,6 +72,8 @@ local function handle_output(system_result, handler)
         local ok, result = pcall(vim.json.decode, system_result.stdout) --[[@as ClaudeResult]]
         if ok and result then
             handler(result)
+        else
+            handler(nil)
         end
     else
         logger():alert("ERROR", "Claude CLI exited with code " .. system_result.code)
