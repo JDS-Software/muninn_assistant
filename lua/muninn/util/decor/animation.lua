@@ -29,6 +29,7 @@ end
 
 ---@param ctx MnContext
 ---@param message table<string>
+---@return table
 function MnAnimation:get_virt_lines(ctx, message)
     local results = {}
     for _, line in ipairs(message) do
@@ -78,6 +79,8 @@ function MnAnimation:_update_banner(ctx, message)
         end_options)
 end
 
+---@param ctx MnContext
+---@return MnAnimationCallback
 function MnAnimation:_create_anim_cb(ctx)
     return function()
         if ctx:finished() then

@@ -7,6 +7,7 @@ local M = {}
 local MnLocation = {}
 MnLocation.__index = MnLocation
 
+---@return string
 function MnLocation:to_string()
     return vim.json.encode(self)
 end

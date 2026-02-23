@@ -69,7 +69,8 @@ local logger = require("muninn.util.log").default
 ---@param handler MuninnClaudeHandler
 local function handle_output(system_result, handler)
     if system_result.code == 0 then
-        local ok, result = pcall(vim.json.decode, system_result.stdout) --[[@as ClaudeResult]]
+        local ok, result = pcall(vim.json.decode, system_result.stdout)
+        result = result --[[@as ClaudeResult]]
         if ok and result then
             handler(result)
         else

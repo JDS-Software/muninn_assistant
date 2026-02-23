@@ -25,7 +25,7 @@ local function noop()
     --do nothing
 end
 
----@param user_input table
+---@param user_input table?
 function M.setup(user_input)
     if not vim.g.muninn_init then
         require("muninn.util.log").setup()

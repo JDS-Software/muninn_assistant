@@ -29,6 +29,7 @@ function M.write(frame, path)
     return true
 end
 
+---@param content string
 ---@return MnFrame?
 function M.from_string(content)
     local tokens = {}

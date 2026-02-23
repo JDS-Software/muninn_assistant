@@ -33,6 +33,8 @@ function MnColor:lerp(target_color, x)
     return M.new_color(new_r, new_g, new_b)
 end
 
+---@param self MnColor
+---@return string
 function MnColor.__tostring(self)
     return string.format("#%02x%02x%02x", round(255 * self.r), round(255 * self.g), round(255 * self.b))
 end
@@ -40,6 +42,7 @@ end
 ---@param r number red 0.0 to 1.0 value
 ---@param g number green 0.0 to 1.0 value
 ---@param b number blue 0.0 to 1.0 value
+---@return MnColor
 function M.new_color(r, g, b)
     return setmetatable({
         r = math.max(0, math.min(1, r)),
@@ -51,6 +54,7 @@ end
 ---@param r number red 0 to 255 value
 ---@param g number green 0 to 255 value
 ---@param b number blue 0 to 255 value
+---@return MnColor
 function M.new_color_rgb(r, g, b)
     return M.new_color(r / 255.0, g / 255.0, b / 255.0)
 end

@@ -119,6 +119,7 @@ end
 ---@param width integer
 ---@param height integer
 ---@param bits table<integer>?
+---@return MnFrame
 function M.new_frame(width, height, bits)
     if width % 4 ~= 0 then
         error("frame width must be multiple of 4, got " .. width, 2)

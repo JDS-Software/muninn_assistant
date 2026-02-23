@@ -11,6 +11,7 @@ MnFnContext.__index = MnFnContext
 ---@param bufnr number the buffer number for the function context
 ---@param fn_body MnReference the function reference
 ---@param fn_comment MnReference? the function's upper-most comment, if one exists
+---@return MnFnContext
 function M.new(bufnr, fn_body, fn_comment)
     local sr, sc, er, ec = fn_body.node:range()
     local id_str = table.concat({ sr, sc, er, ec }, "_")

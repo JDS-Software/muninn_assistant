@@ -54,6 +54,7 @@ function MnAnContext:reset(bufnr)
 end
 
 ---@param fn_context MnFnContext
+---@return MnAnContext
 function M.new(fn_context)
     local options = {}
 
