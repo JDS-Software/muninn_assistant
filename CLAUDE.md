@@ -149,7 +149,6 @@ Failure recovery pattern (reuses extmarks for a failure animation):
 ctx.an_context.preserve_ext = true
 vim.defer_fn(function()
     ctx:reset_state()
-    ctx:next_state()
     animation.new_failure_animation():start(ctx)
     vim.defer_fn(function() ctx:next_state() end, 5000)
 end, 100)
