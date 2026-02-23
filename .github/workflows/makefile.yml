@@ -1,0 +1,25 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Neovim
+      run: |
+        curl -LO https://github.com/neovim/neovim/releases/download/v0.10.4/nvim-linux-x86_64.tar.gz
+        tar xzf nvim-linux-x86_64.tar.gz
+        sudo mv nvim-linux-x86_64 /opt/nvim
+        sudo ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim
+
+    - name: Run tests
+      run: make test
