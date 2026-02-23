@@ -67,7 +67,7 @@ return function()
             anim.new_question_animation(ctx):start(ctx)
 
             claude.execute_prompt(ask_prompt, function(result)
-                if result and result.structured_output.result then
+                if result and result.structured_output and result.structured_output.result then
                     launch_response_viewer(result)
                 else
                     logging.default():log("ERROR", "Query failed")
