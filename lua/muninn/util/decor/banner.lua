@@ -1,6 +1,5 @@
 local M = {}
 local logger = require("muninn.util.log").default
-local render = require("muninn.util.decor.render")
 local pbm = require("muninn.util.img.pbm")
 
 ---@alias MnBanner fun(at_frame: number): table<string>
@@ -103,14 +102,11 @@ function M.new_spritemap_banner(message, image, timefactor)
     end
     local frames = {}
     for i = 0, parts - 1 do
-        logger():log("DEBUG", "i: " .. i)
-        local start_row = (i + 1) + ((i) * rows_per_part)
+        local start_row = (i + 1) + (i * rows_per_part)
         local end_row = (start_row + rows_per_part)
         local frame = {}
-        logger():log("DEBUG", "searching: " .. start_row .. " to " .. end_row)
         for j = start_row, end_row do
             local line = lines[j]
-            logger():log("DEBUG", "line at: " .. j .. ": " .. line)
             if j == end_row then
                 line = line .. message .. " " .. M.blackbird_icon
             end
