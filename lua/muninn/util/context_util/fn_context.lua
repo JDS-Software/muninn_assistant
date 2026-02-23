@@ -13,8 +13,9 @@ MnFnContext.__index = MnFnContext
 ---@param fn_comment MnReference? the function's upper-most comment, if one exists
 function M.new(bufnr, fn_body, fn_comment)
     local sr, sc, er, ec = fn_body.node:range()
+    local id_str = table.concat({ sr, sc, er, ec }, "_")
     return setmetatable(
-        { bufnr = bufnr, fn_body = fn_body, fn_comment = fn_comment, id = sr .. sc .. er .. ec },
+        { bufnr = bufnr, fn_body = fn_body, fn_comment = fn_comment, id = id_str },
         MnFnContext
     )
 end
