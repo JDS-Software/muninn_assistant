@@ -219,6 +219,8 @@ end
 ---@param ctx MnContext
 function M.new_debug_animation(ctx)
     local banner = bann.debug_banner(ctx)
+    if not banner then banner = bann.new_mono_animation_banner("Debug Fallback", bann.looper, 1) end
+
     local background = color.get_theme_background()
     local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
     local anim = M.new_animation(banner, color.text_gradient, bg_gradient, time.new_time(4))
