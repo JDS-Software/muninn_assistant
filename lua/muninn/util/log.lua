@@ -24,11 +24,12 @@ end
 ---@return table
 local function split_newline(str)
     local lines = {}
-    for line in str:gmatch("[^\n]+") do
+    for line in (str .. "\n"):gmatch("([^\n]*)\n") do
         lines[#lines + 1] = line
     end
     return lines
 end
+
 
 ---@param level LogLevel
 ---@param message string
