@@ -1,5 +1,4 @@
 local M = {}
-local logger = require("muninn.util.log").default
 
 ---@param x number
 ---@return number x rounded up or down (up at x.5)
