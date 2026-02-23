@@ -129,7 +129,7 @@ function M.on_vim_resized(group, win_id_fn, recalc_fn)
         callback = function()
             local wid = win_id_fn()
             if wid and vim.api.nvim_win_is_valid(wid) then
-                vim.api.nvim_win_set_config(wid, recalc_fn())
+                pcall(vim.api.nvim_win_set_config, wid, recalc_fn())
             end
         end,
     })
