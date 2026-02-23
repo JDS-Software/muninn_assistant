@@ -14,7 +14,8 @@ local DEBOUNCE_MS = 150
 
 local bufcache = {}
 
-local function build_buffer_autocmds()
+---@param bufnr integer
+local function build_buffer_autocmds(bufnr)
     local timer = vim.uv.new_timer()
 
     ---@param args NeovimAutocmdEventArgs
@@ -27,7 +28,7 @@ local function build_buffer_autocmds()
         end
     end
 
-    local autocmd_id = vim.api.nvim_create_autocmd({ "CursorMoved", "InsertLeave" }, { callback = cb })
+    local autocmd_id = vim.api.nvim_create_autocmd({ "CursorMoved", "InsertLeave" }, { callback = cb, buffer = bufnr })
     return { autocmd_id = autocmd_id, timer = timer }
 end
 
@@ -37,7 +38,7 @@ local function setup_on_bufenter()
             local bufnr = args.buf
             local bufname = vim.api.nvim_buf_get_name(bufnr)
             if #bufname > 0 and not bufcache[bufnr] then
-                bufcache[bufnr] = build_buffer_autocmds()
+                bufcache[bufnr] = build_buffer_autocmds(bufnr)
             end
         end,
     })
