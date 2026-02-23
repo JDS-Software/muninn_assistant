@@ -155,7 +155,7 @@ end
 local function get_relevant_fn_scope(n)
     local scope = n
     local typ = n:type()
-    if vim.list_contains(matching_function_types, typ) then
+    if vim.tbl_contains(matching_function_types, typ) then
         local ancestor = n:parent()
         while ancestor do
             local at = ancestor:type()
@@ -169,7 +169,7 @@ local function get_relevant_fn_scope(n)
             elseif at == "decorated_definition" then
                 scope = ancestor
                 break
-            elseif vim.list_contains(decl_types, at) then
+            elseif vim.tbl_contains(decl_types, at) then
                 scope = ancestor
                 break
             end
