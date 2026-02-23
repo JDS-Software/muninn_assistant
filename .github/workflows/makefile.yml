@@ -24,7 +24,7 @@ jobs:
     - name: Install treesitter parsers
       run: |
         git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter.git /tmp/nvim-treesitter
-        nvim --headless --cmd "set rtp+=/tmp/nvim-treesitter" -c "TSInstallSync go javascript typescript python" -c "q"
+        nvim --headless -c "set rtp+=/tmp/nvim-treesitter" -c "runtime! plugin/**/*.lua" -c "TSInstallSync go javascript typescript python" -c "q"
 
     - name: Run tests
       run: make test
