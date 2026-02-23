@@ -58,6 +58,7 @@ local function setup_on_bufend()
                     end
                     vim.api.nvim_del_autocmd(entry.autocmd_id)
                     bufcache[bufnr] = nil
+                    viewer.evict_cache(bufnr)
                 end
             end
         end,

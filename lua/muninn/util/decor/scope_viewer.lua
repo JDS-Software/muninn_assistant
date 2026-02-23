@@ -17,6 +17,13 @@ local function clear_marks()
     end
 end
 
+---@param bufnr number
+function M.evict_cache(bufnr)
+    if caches[bufnr] then
+        caches[bufnr] = nil
+    end
+end
+
 ---@class MnScopeViewerCacheLine
 ---@field ctx MnContext
 ---@field ext_mark_id number
