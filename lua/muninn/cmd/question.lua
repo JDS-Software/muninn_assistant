@@ -2,7 +2,7 @@ local context = require("muninn.util.context")
 local prompt = require("muninn.util.prompt")
 local claude = require("muninn.util.claude")
 local input = require("muninn.components.prompt")
-local logging = require("muninn.util.log")
+local logger = require("muninn.util.log").default
 local animation = require("muninn.util.decor.animation")
 local float = require("muninn.components.float")
 
@@ -20,7 +20,7 @@ end
 ---@param result ClaudeResult
 local function launch_response_viewer(result)
     if not result or not result.structured_output or not result.structured_output.content then
-        logging.default():alert("ERROR", "Failed to get response from Muninn")
+        logger():alert("ERROR", "Failed to get response from Muninn")
         return
     end
 
@@ -65,7 +65,7 @@ return function()
 
             local ask_prompt = prompt.build_query_prompt(ctx, question)
 
-            logging.default():log("QUESTION_PROMPT", ask_prompt)
+            logger():log("QUESTION_PROMPT", ask_prompt)
             local anim = animation.new_question_animation(ctx)
             anim:start(ctx)
 
@@ -74,7 +74,7 @@ return function()
                     launch_response_viewer(result)
                     ctx:next_state()
                 else
-                    logging.default():log("ERROR", "Query failed")
+                    logger():log("ERROR", "Query failed")
                     ctx.an_context.preserve_ext = true
                     ctx:next_state()
                     vim.defer_fn(launch_error(ctx), anim:get_frame_time():to_millis())
