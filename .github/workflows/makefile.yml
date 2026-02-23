@@ -21,5 +21,10 @@ jobs:
         sudo mv nvim-linux-x86_64 /opt/nvim
         sudo ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim
 
+    - name: Install treesitter parsers
+      run: |
+        git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter.git /tmp/nvim-treesitter
+        nvim --headless --cmd "set rtp+=/tmp/nvim-treesitter" -c "TSInstallSync go javascript typescript python" -c "q"
+
     - name: Run tests
       run: make test
