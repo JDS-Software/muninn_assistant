@@ -8,11 +8,13 @@ local float = require("muninn.components.float")
 
 ---@param ctx MnContext
 local function launch_error(ctx)
-    ctx:reset_state()
-    anim.new_failure_animation():start(ctx)
-    vim.defer_fn(function()
-        ctx:next_state()
-    end, 5000)
+    return function()
+        ctx:reset_state()
+        anim.new_failure_animation():start(ctx)
+        vim.defer_fn(function()
+            ctx:next_state()
+        end, 5000)
+    end
 end
 
 ---@param result ClaudeResult
@@ -64,7 +66,8 @@ return function()
             local ask_prompt = prompt.build_query_prompt(ctx, question)
 
             logging.default():log("QUESTION_PROMPT", ask_prompt)
-            anim.new_question_animation(ctx):start(ctx)
+            local animation = anim.new_question_animation(ctx)
+            animation:start(ctx)
 
             claude.execute_prompt(ask_prompt, function(result)
                 if result and result.structured_output and result.structured_output.content then
@@ -73,7 +76,8 @@ return function()
                 else
                     logging.default():log("ERROR", "Query failed")
                     ctx.an_context.preserve_ext = true
-                    launch_error(ctx)
+                    ctx:next_state()
+                    vim.defer_fn(launch_error(ctx), animation:get_frame_time():to_millis())
                 end
             end)
         end)
