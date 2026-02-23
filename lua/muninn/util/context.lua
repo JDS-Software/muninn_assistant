@@ -219,17 +219,17 @@ end
 ---@param results table
 ---@param seen table
 local function process_node(n, source, results, seen)
-    local type = n:type()
+    local typ = n:type()
 
     local scope = nil
-    if vim.tbl_contains(fn_types, type) then
+    if vim.tbl_contains(fn_types, typ) then
         scope = get_relevant_fn_scope(n)
-    elseif vim.tbl_contains(struct_types, type) then
+    elseif vim.tbl_contains(struct_types, typ) then
         scope = get_relevant_struct_scope(n)
         if not scope then
             return
         end
-    elseif vim.tbl_contains(decl_types, type) then
+    elseif vim.tbl_contains(decl_types, typ) then
         scope = get_relevant_var_scope(n)
         if not scope then
             return
