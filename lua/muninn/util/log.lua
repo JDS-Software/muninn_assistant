@@ -11,7 +11,8 @@ local M = {}
 local MnLogger = {}
 MnLogger.__index = MnLogger
 
-M.default = function() --[[@as fun(): MnLogger]]
+---@return MnLogger
+M.default = function()
     return M.default_logger
 end
 
