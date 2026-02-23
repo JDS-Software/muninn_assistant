@@ -74,9 +74,9 @@ local function handle_output(system_result, handler)
             handler(result)
         end
     else
-        logger():log("ERROR", "Claude CLI exited with code " .. system_result.code)
+        logger():alert("ERROR", "Claude CLI exited with code " .. system_result.code)
         if system_result.stderr and system_result.stderr ~= "" then
-            logger():log("ERROR", system_result.stderr)
+            logger():alert("ERROR", system_result.stderr)
         end
         handler(nil)
     end
@@ -94,7 +94,7 @@ function M.execute_prompt(safe_prompt, handler)
         end)
     end
 
-    local _ = vim.system(command_table, { text = true }, cb)
+    vim.system(command_table, { text = true }, cb)
 end
 
 return M
