@@ -51,6 +51,7 @@ M.sworl = M.to_double_wide_astring(r_spinner_str, spinner_str)
 M.blackbird_icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
 
 ---@param ctx MnContext
+---@return MnBanner
 function M.debug_banner(ctx)
     local img_path = ctx:get_file("animations/debug.pbm")
     logger():log("INFO", "img_path: " .. img_path)

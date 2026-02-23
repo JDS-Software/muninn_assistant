@@ -217,6 +217,7 @@ function M.new_question_animation(ctx)
 end
 
 ---@param ctx MnContext
+---@return MnAnimation
 function M.new_debug_animation(ctx)
     local banner = bann.debug_banner(ctx)
     if not banner then banner = bann.new_mono_animation_banner("Debug Fallback", bann.looper, 1) end
@@ -227,6 +228,7 @@ function M.new_debug_animation(ctx)
     return anim
 end
 
+---@return MnAnimation
 function M.new_failure_animation()
     local banner = bann.new_mono_animation_banner(" Muninn Failed — :MuninnLog for details ", bann.faller, 1)
 
