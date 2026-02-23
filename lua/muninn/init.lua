@@ -21,11 +21,18 @@ local function init_keymap()
     vim.keymap.set({ "n" }, "<leader>mq", ":MuninnQuestion<CR>", { silent = true, desc = "Muninn Question" })
 end
 
+local function noop()
+    --do nothing
+end
+
 function M.setup(user_input)
     if not vim.g.muninn_init then
         require("muninn.util.log").setup()
         require("muninn.util.event_listeners").setup()
         require("muninn.util.context").setup()
+        if user_input then
+            noop()
+        end
         init_commands()
         init_keymap()
         vim.g.muninn_init = true

@@ -7,7 +7,7 @@ local time = require("muninn.util.time")
 local function near(a, b)
     local res = math.abs(a - b) < 1e-9
     if not res then
-        print(string.format("Wanted %f, got %f", a, b))
+        io.write(string.format("Wanted %f, got %f", a, b))
     end
     return res
 end
