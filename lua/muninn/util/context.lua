@@ -154,8 +154,8 @@ end
 ---@return TSNode
 local function get_relevant_fn_scope(n)
     local scope = n
-    local type = n:type()
-    if vim.list_contains(matching_function_types, type) then
+    local typ = n:type()
+    if vim.list_contains(matching_function_types, typ) then
         local ancestor = n:parent()
         while ancestor do
             local at = ancestor:type()
