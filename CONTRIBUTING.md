@@ -1,6 +1,6 @@
-# Contributing to Huginn
+# Contributing to Muninn
 
-Huginn is developed by a non-tech company with limited engineering resources dedicated to this project. As such, we are not actively accepting code contributions at this time.
+Muninn is developed by a non-tech company with limited engineering resources dedicated to this project. As such, we are not actively accepting code contributions at this time.
 
 ## Bug Reports
 
@@ -10,7 +10,7 @@ If you encounter a bug, please open an issue on GitHub. Include:
 - Expected vs actual behavior
 - Your Neovim version (`nvim --version`)
 - Your plugin manager (lazy.nvim, packer.nvim, vim-plug, etc.)
-- Any other plugins that might interact with Huginn
+- Any other plugins that might interact with Muninn
 - Relevant parts of your Neovim configuration
 
 ## Feature Requests
