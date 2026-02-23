@@ -41,11 +41,33 @@ function M.build_task_prompt(ctx, user_prompt)
     return require("muninn.util.claude_refusal")
 end
 
-local query_prompt_template = [[Your task is to assist the user with a question they have regarding this project.
+local query_prompt_template_with_focus =
+[[Your task is to assist the user with a question they have regarding this project.
 You are provided with a request from the user and the entire content of a source code file.
 Your response will be shown to the user in an annotation.
-The user's request is between >>> USER INPUT START <<< and >>> USER INPUT END <<<.
-The file content is between >>> FILE CONTENT START <<< and >>> FILE CONTENT END <<<.
+The user's request is between `>>> USER INPUT START <<<` and `>>> USER INPUT END <<<`.
+The file content is between `>>> FILE CONTENT START <<<` and `>>> FILE CONTENT END <<<`.
+The user is specifically looking at the content between `>>> BEGIN USER FOCUS >>>` and `<<< END USER FOCUS <<<`.
+
+>>> USER INPUT START <<<
+%s
+>>> USER INPUT END <<<
+
+>>> FILE CONTENT START <<<
+%s
+>>> BEGIN USER FOCUS >>>
+%s
+<<< END USER FOCUS <<<
+%s
+>>> FILE CONTENT END <<<
+]]
+
+local query_prompt_template_no_focus =
+[[Your task is to assist the user with a question they have regarding this project.
+You are provided with a request from the user and the entire content of a source code file.
+Your response will be shown to the user in an annotation.
+The user's request is between `>>> USER INPUT START <<<` and `>>> USER INPUT END <<<`.
+The file content is between `>>> FILE CONTENT START <<<` and `>>> FILE CONTENT END <<<`.
 
 >>> USER INPUT START <<<
 %s
@@ -56,9 +78,23 @@ The file content is between >>> FILE CONTENT START <<< and >>> FILE CONTENT END 
 >>> FILE CONTENT END <<<
 ]]
 
-function M.build_query_prompt(context, user_prompt)
-    local file_content = bufutil.get_buffer_content(context)
-    return string.format(query_prompt_template, user_prompt, file_content)
+function M.build_query_prompt(ctx, user_prompt)
+    local beginning, middle, ending = bufutil.scissor_function_reference(ctx)
+    if beginning and middle and ending then
+        return string.format(
+            query_prompt_template_with_focus,
+            user_prompt,
+            table.concat(beginning, "\n"),
+            table.concat(middle, "\n"),
+            table.concat(ending, "\n")
+        )
+    else
+        local file_content = bufutil.get_buffer_content(ctx)
+        return string.format(
+            query_prompt_template_no_focus,
+            user_prompt,
+            file_content)
+    end
 end
 
 return M
