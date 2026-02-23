@@ -1,5 +1,4 @@
 local M = {}
-local logger = require("muninn.util.log").default
 local viewer = require("muninn.util.decor.scope_viewer")
 
 ---@class NeovimAutocmdEventArgs
@@ -20,10 +19,12 @@ local function build_buffer_autocmds()
 
     ---@param args NeovimAutocmdEventArgs
     local cb = function(args)
-        timer:stop()
-        timer:start(DEBOUNCE_MS, 0, vim.schedule_wrap(function()
-            viewer.on_moved_or_insert_leave(args)
-        end))
+        if timer then
+            timer:stop()
+            timer:start(DEBOUNCE_MS, 0, vim.schedule_wrap(function()
+                viewer.on_moved_or_insert_leave(args)
+            end))
+        end
     end
 
     local autocmd_id = vim.api.nvim_create_autocmd({ "CursorMoved", "InsertLeave" }, { callback = cb })

@@ -84,7 +84,11 @@ function MnAnimation:_create_anim_cb(ctx)
             logger():log("INFO", "animation over")
             self:end_animation(ctx)
             return
+        elseif not vim.api.nvim_buf_is_valid(ctx.fn_context.bufnr) then
+            logger():log("INFO", "buffer was closed, stopping animation")
+            return
         end
+
         self:frame()
 
         vim.api.nvim_set_hl(0, ctx.an_context.hl_group, self:get_hl())
