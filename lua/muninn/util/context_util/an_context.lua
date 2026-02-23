@@ -10,7 +10,6 @@ local hl_group_base = "muninn_highlight"
 ---@class MnAnContext
 ---@field hl_group string
 ---@field ext_namespace number
----@field hl_namespace string
 ---@field ext_mark_start number? ext_mark ID
 ---@field ext_mark_end number? ext_mark ID
 ---@field state MnState

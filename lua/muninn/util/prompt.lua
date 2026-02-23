@@ -55,6 +55,7 @@ The user is specifically looking at the content between `>>> BEGIN USER FOCUS >>
 
 >>> FILE CONTENT START <<<
 %s
+
 >>> BEGIN USER FOCUS >>>
 %s
 <<< END USER FOCUS <<<
@@ -78,6 +79,9 @@ The file content is between `>>> FILE CONTENT START <<<` and `>>> FILE CONTENT E
 >>> FILE CONTENT END <<<
 ]]
 
+---@param ctx MnContext
+---@param user_prompt string
+---@return string
 function M.build_query_prompt(ctx, user_prompt)
     local beginning, middle, ending = bufutil.scissor_function_reference(ctx)
     if beginning and middle and ending then
