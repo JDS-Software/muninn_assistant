@@ -67,6 +67,7 @@ function M.new(fn_context)
 
     return setmetatable({
         state = M.STATE_INIT,
+        preserve_ext = false,
         ext_mark_start = ext_mark_start,
         ext_mark_end = ext_mark_end,
         hl_group = hl_group_base .. fn_context.id,

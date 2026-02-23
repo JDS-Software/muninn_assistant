@@ -69,12 +69,12 @@ return function()
             claude.execute_prompt(ask_prompt, function(result)
                 if result and result.structured_output and result.structured_output.content then
                     launch_response_viewer(result)
+                    ctx:next_state()
                 else
                     logging.default():log("ERROR", "Query failed")
                     ctx.an_context.preserve_ext = true
                     launch_error(ctx)
                 end
-                ctx:next_state()
             end)
         end)
     end
