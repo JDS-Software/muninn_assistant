@@ -28,7 +28,7 @@ The project uses `stylua` for Lua formatting.
 ### Core Flow
 
 1. **Context extraction** (`util/context.lua`) — Treesitter walks the buffer AST to find all function/struct/variable declarations, wraps them as `MnFnContext` objects, and identifies which one contains the cursor.
-2. **Prompt construction** (`util/prompt.lua`) — Splits the buffer into before/target/after sections using `bufutil.scissor_function_reference()`, then formats a template with `<content>` tags marking the replacement region.
+2. **Prompt construction** (`util/prompt.lua`) — Two builders: `build_task_prompt` splits the buffer into before/target/after sections using `bufutil.scissor_function_reference()` and formats a template with `<content>` tags marking the replacement region. `build_query_prompt` formats the full buffer content for Q&A (used by the `question` command).
 3. **API call** (`util/claude.lua`) — Shells out to the `claude` CLI (`vim.system`) with `--output-format json` and `--json-schema` for structured output. The response is parsed as `ClaudeResult` with a `structured_output.content` field containing the replacement code.
 4. **Result insertion** (`util/bufutil.lua`) — `insert_safe_result_at_function()` replaces the target region using extmark positions (handles line shifts).
 5. **Visual feedback** (`util/decor/animation.lua`, `util/decor/banner.lua`) — Animated banners rendered at 24 FPS via `vim.defer_fn`, using extmark virtual lines at function boundaries.
@@ -39,15 +39,19 @@ Every operation uses `MnContext` (combines `MnFnContext` + `MnAnContext`) with s
 
 ### Key Modules
 
-- **`cmd/`** — Command handlers. `autocomplete.lua` (auto-completes the function at cursor) and `prompt.lua` (opens a dialog for user instructions) are the primary commands; `default.lua` and `test.lua` are demos. `log.lua` opens a floating window with the session log.
+- **`cmd/`** — Command handlers. `autocomplete.lua` (auto-completes the function at cursor) and `prompt.lua` (opens a dialog for user instructions) are the primary edit commands — they replace buffer content. `question.lua` is the Q&A command — it opens a prompt, calls Claude, and displays the answer in a floating window (no buffer replacement). `debug.lua` and `default.lua` are demo/debug commands. `test.lua` is a no-op stub. `log.lua` opens a floating window with the session log.
 - **`util/context_util/`** — Data structures: `MnFnContext` (code location), `MnAnContext` (decoration state + extmarks), `MnLocation` (row/col range), `MnReference` (TSNode + location).
 - **`util/color.lua`** — RGB colors with linear/triangular gradient interpolation and theme background detection.
 - **`util/time.lua`** — `MnTime` (clock wrapper) and `MnOscillator` (cosine-based 0→1→0 cycling for animations).
-- **`components/`** — Reusable UI: `float.lua` (floating window primitives) and `prompt.lua` (text input dialog).
+- **`util/decor/render.lua`** — `MnFrame` class (Braille pixel grid rendering). Used by `animation.lua` and `banner.lua` for frame data.
+- **`util/decor/scope_viewer.lua`** — Passive feature: highlights the current function scope under the cursor on `CursorMoved`/`InsertLeave`, driven by `event_listeners.lua` with 150ms debounce.
+- **`util/event_listeners.lua`** — Sets up `BufEnter`/`BufUnload` autocmds to manage per-buffer cursor listeners that drive `scope_viewer`.
+- **`util/img/pbm.lua`** — Reads P1-format PBM files into `MnFrame` objects for sprite-based animations.
+- **`components/`** — Reusable UI: `float.lua` (floating window primitives + autocmd helpers for focus/resize) and `prompt.lua` (multi-line floating input, `<C-s>` to submit, `<Esc>` to dismiss).
 
 ### Plugin Entry Point
 
-`plugin/muninn.lua` → `lua/muninn/init.lua` → registers commands (`Muninn`, `MuninnAutocomplete`, `MuninnPrompt`, `MuninnTest`, `MuninnLog`) and keymaps under `<leader>m` prefix.
+`plugin/muninn.lua` → `lua/muninn/init.lua` → registers commands (`Muninn`, `MuninnAutocomplete`, `MuninnPrompt`, `MuninnQuestion`, `MuninnTest`, `MuninnDebug`, `MuninnLog`) and keymaps under `<leader>m` prefix.
 
 ## Conventions & Idioms
 
