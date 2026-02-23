@@ -7,7 +7,7 @@ return function()
     local ctx = context.get_context_at_cursor()
     logger():log("INFO", "Acquired context")
     if ctx then
-        local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
+        local request_prompt = prompt.build_task_prompt(ctx, "Please complete this function.")
 
         logger():log("PROMPT", request_prompt)
 

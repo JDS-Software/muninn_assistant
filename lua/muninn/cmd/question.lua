@@ -6,69 +6,76 @@ local logging = require("muninn.util.log")
 local anim = require("muninn.util.decor.animation")
 local float = require("muninn.components.float")
 
+---@param ctx MnContext
 local function launch_error(ctx)
-	anim.new_failure_animation():start(ctx)
-	vim.defer_fn(function()
-		ctx:next_state()
-	end, 5000)
+    ctx:reset_state()
+    anim.new_failure_animation():start(ctx)
+    vim.defer_fn(function()
+        ctx:next_state()
+    end, 5000)
 end
 
 ---@param result ClaudeResult
 local function launch_response_viewer(result)
-	local lines = vim.split(result.structured_output.content, "\n", { plain = true })
-	local win_opts = float.make_win_opts({
-		width_ratio = 0.5,
-		height_ratio = 0.33,
-		title = "Muninn's Response",
-		content_count = #lines,
-		content_offset = 2,
-	})
-	win_opts.row = vim.o.lines - win_opts.height - 2
-	win_opts.col = vim.o.columns - win_opts.width - 2
+    if not result or not result.structured_output or not result.structured_output.content then
+        logging.default():alert("ERROR", "Failed to get response from Muninn")
+        return
+    end
 
-	local buf = float.create_buf("markdown")
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+    local lines = vim.split(result.structured_output.content, "\n", { plain = true })
+    local win_opts = float.make_win_opts({
+        width_ratio = 0.5,
+        height_ratio = 0.33,
+        title = "Muninn's Response",
+        content_count = #lines,
+        content_offset = 2,
+    })
+    win_opts.row = vim.o.lines - win_opts.height - 2
+    win_opts.col = vim.o.columns - win_opts.width - 2
 
-	local ok, win_handle = pcall(vim.api.nvim_open_win, buf, true, win_opts)
-	if ok then
-		local function close_win()
-			if win_handle and vim.api.nvim_win_is_valid(win_handle) then
-				vim.cmd("stopinsert")
-				vim.api.nvim_win_close(win_handle, true)
-			end
-		end
+    local buf = float.create_buf("markdown")
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 
-		vim.api.nvim_set_option_value("wrap", true, { win = win_handle })
-		vim.keymap.set("n", "<Esc>", close_win, { buffer = buf, nowait = true })
-		vim.keymap.set("n", "q", close_win, { buffer = buf, nowait = true })
-	end
+    local ok, win_handle = pcall(vim.api.nvim_open_win, buf, true, win_opts)
+    if ok then
+        local function close_win()
+            if win_handle and vim.api.nvim_win_is_valid(win_handle) then
+                vim.cmd("stopinsert")
+                vim.api.nvim_win_close(win_handle, true)
+            end
+        end
+
+        vim.api.nvim_set_option_value("wrap", true, { win = win_handle })
+        vim.keymap.set("n", "<Esc>", close_win, { buffer = buf, nowait = true })
+        vim.keymap.set("n", "q", close_win, { buffer = buf, nowait = true })
+    end
 end
 
 return function()
-	local ctx = context.get_context_at_cursor()
+    local ctx = context.get_context_at_cursor()
 
-	if ctx then
-		input.show("Ask a question.", function(question)
-			if not question then
-				return
-			end
+    if ctx then
+        input.show("Ask a question.", function(question)
+            if not question then
+                return
+            end
 
-			local ask_prompt = prompt.build_query_prompt(ctx, question)
+            local ask_prompt = prompt.build_query_prompt(ctx, question)
 
-			logging.default():log("QUESTION_PROMPT", ask_prompt)
-			anim.new_question_animation(ctx):start(ctx)
+            logging.default():log("QUESTION_PROMPT", ask_prompt)
+            anim.new_question_animation(ctx):start(ctx)
 
-			claude.execute_prompt(ask_prompt, function(result)
-				if result and result.structured_output.result then
-					launch_response_viewer(result)
-				else
-					logging.default():log("ERROR", "Query failed")
-					ctx.an_context.preserve_ext = true
-					launch_error(ctx)
-				end
-				ctx:next_state()
-			end)
-		end)
-	end
+            claude.execute_prompt(ask_prompt, function(result)
+                if result and result.structured_output.result then
+                    launch_response_viewer(result)
+                else
+                    logging.default():log("ERROR", "Query failed")
+                    ctx.an_context.preserve_ext = true
+                    launch_error(ctx)
+                end
+                ctx:next_state()
+            end)
+        end)
+    end
 end
