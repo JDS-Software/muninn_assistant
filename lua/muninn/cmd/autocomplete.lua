@@ -23,7 +23,7 @@ return function()
     local ctx = context.get_context_at_cursor()
     logger():log("INFO", "Acquired context")
     if ctx then
-        local request_prompt = prompt.build_prompt(ctx, "Please complete this function.")
+        local request_prompt = prompt.build_task_prompt(ctx, "Please complete this function.")
 
         logger():log("AUTOCOMPLETE PROMPT", request_prompt)
 
@@ -41,7 +41,7 @@ return function()
                 ctx.an_context.preserve_ext = true
                 vim.defer_fn(function()
                     alert_failure(ctx)
-                end, 100)
+                end, anim:get_frame_time() * 2)
             end
             ctx:next_state()
         end

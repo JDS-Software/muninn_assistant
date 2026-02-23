@@ -25,9 +25,10 @@ return function()
                 return
             end
 
-            local request_prompt = prompt.build_prompt(ctx, user_input)
+            local request_prompt = prompt.build_task_prompt(ctx, user_input)
 
-            animation.new_query_animation():start(ctx)
+            local anim = animation.new_query_animation()
+            anim:start(ctx)
 
             ---@param result ClaudeResult
             local result_cb = function(result)
@@ -42,7 +43,7 @@ return function()
                     ctx.an_context.preserve_ext = true
                     vim.defer_fn(function()
                         alert_failure(ctx)
-                    end, 100)
+                    end, anim:get_frame_time() * 2)
                 end
                 ctx:next_state()
             end
