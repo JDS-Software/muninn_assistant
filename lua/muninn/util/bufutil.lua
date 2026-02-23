@@ -20,7 +20,7 @@ function M.scissor_function_reference(context)
     local line_start, _ = context.fn_context:get_start()
 
     for i, line in ipairs(vim.api.nvim_buf_get_lines(context.fn_context.bufnr, 0, -1, false)) do
-        if i < line_start then
+        if i <= line_start then
             table.insert(begin, line)
         elseif i >= line_start and i <= line_end then
             table.insert(middle, line)
