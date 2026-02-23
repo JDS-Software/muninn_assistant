@@ -29,6 +29,7 @@ function M.write(frame, path)
     return true
 end
 
+---@return MnFrame?
 function M.from_string(content)
     local tokens = {}
     for token in content:gmatch("%S+") do

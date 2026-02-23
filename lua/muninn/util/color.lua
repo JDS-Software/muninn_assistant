@@ -127,6 +127,7 @@ M.green = M.new_color(0, 1, 0)
 M.blue = M.new_color(0, 0, 1)
 M.grey = M.new_color(0.5, 0.5, 0.5)
 
+---@return MnColor
 function M.get_theme_background()
     local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
     local bg_color = normal_hl.bg
