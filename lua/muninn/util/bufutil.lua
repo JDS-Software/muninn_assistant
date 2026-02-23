@@ -65,4 +65,11 @@ function M.insert_safe_result_at_function(context, safe_result)
     vim.api.nvim_buf_set_lines(context.fn_context.bufnr, start_row, end_row + 1, false, lines)
 end
 
+---@param ctx MnContext
+---@return string
+function M.get_buffer_content(ctx)
+    local lines = vim.api.nvim_buf_get_lines(ctx.fn_context.bufnr, 0, -1, false)
+    return table.concat(lines, "\n")
+end
+
 return M

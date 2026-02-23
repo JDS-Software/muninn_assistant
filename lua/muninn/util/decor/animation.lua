@@ -4,6 +4,7 @@ local color = require("muninn.util.color")
 local logger = require("muninn.util.log").default
 local time = require("muninn.util.time")
 local bann = require("muninn.util.decor.banner")
+local pbm = require("muninn.util.img.pbm")
 
 ---@alias MnAnimationCallback fun()
 
@@ -119,6 +120,7 @@ function MnAnimation:set_duration(t)
     self.oscillator = time.new_oscillator(t)
 end
 
+---returns the target time per frame
 ---@return MnTime computed run time
 function MnAnimation:get_frame_time()
     local run_seconds = self.frame_number / self.target_fps
@@ -189,6 +191,25 @@ function M.new_query_animation()
     local anim = M.new_animation(banner, color.text_gradient, bg_gradient, time.new_time(6))
 
     return anim
+end
+
+---@param ctx MnContext
+---@return MnAnimation
+function M.new_question_animation(ctx)
+    local img_filepath = ctx:get_file("animations/debug.pbm")
+    local anim_frame = pbm.read(img_filepath)
+    local msg = " Muninn Thinking"
+    local banner = bann.new_mono_animation_banner(msg, bann.looper, 1)
+    if anim_frame then
+        banner = bann.new_spritemap_banner(msg, anim_frame, 1)
+    end
+
+    local fg_gradient = color.new_triangular_gradient(color.muninn_blue, color.muninn_blue:lerp(color.blue, 0.1),
+        color.muninn_blue)
+
+    local background = color.get_theme_background()
+    local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.white, 0.05), background)
+    return M.new_animation(banner, fg_gradient, bg_gradient, time.new_time(3))
 end
 
 ---@param ctx MnContext

@@ -7,6 +7,7 @@ local function init_commands()
     vim.api.nvim_create_user_command("MuninnTest", require("muninn.cmd.test"), {})
     vim.api.nvim_create_user_command("MuninnDebug", require("muninn.cmd.debug"), {})
     vim.api.nvim_create_user_command("MuninnLog", require("muninn.cmd.log"), {})
+    vim.api.nvim_create_user_command("MuninnQuestion", require("muninn.cmd.question"), {})
 end
 
 local function init_keymap()
@@ -17,6 +18,7 @@ local function init_keymap()
     vim.keymap.set({ "n" }, "<leader>mt", ":MuninnTest<CR>", { silent = true, desc = "Muninn Test" })
     vim.keymap.set({ "n" }, "<leader>md", ":MuninnDebug<CR>", { silent = true, desc = "Muninn Debug" })
     vim.keymap.set({ "n" }, "<leader>ml", ":MuninnLog<CR>", { silent = true, desc = "Muninn Log" })
+    vim.keymap.set({ "n" }, "<leader>mq", ":MuninnQuestion<CR>", { silent = true, desc = "Muninn Question" })
 end
 
 function M.setup(user_input)
