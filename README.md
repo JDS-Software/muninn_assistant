@@ -47,6 +47,10 @@ use {
 Plug 'JDS-Software/muninn'
 ```
 
+## Configuration
+
+No user configuration options are supported yet. Calling `setup()` with no arguments is sufficient.
+
 ## Commands and Keymaps
 
 | Command | Keymap | Description |

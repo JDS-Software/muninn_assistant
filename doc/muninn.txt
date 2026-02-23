@@ -1,0 +1,97 @@
+*muninn.txt*    AI-powered code editing inside Neovim
+
+Author:  JDS Consulting, PLLC
+License: MIT
+
+==============================================================================
+CONTENTS                                                    *muninn-contents*
+
+    1. Introduction ............................ |muninn-introduction|
+    2. Requirements ............................ |muninn-requirements|
+    3. Setup ................................... |muninn-setup|
+    4. Commands ................................ |muninn-commands|
+    5. Keymaps ................................. |muninn-keymaps|
+    6. Prompt window ........................... |muninn-prompt|
+
+==============================================================================
+1. INTRODUCTION                                         *muninn-introduction*
+
+Muninn provides AI-powered code editing via the Claude API. Place your cursor
+on a function, run a command, and Claude rewrites it in-place. Animated visual
+feedback is displayed during operations.
+
+Features:
+
+- Autocomplete the function at your cursor.
+- Describe edits in a floating prompt; Claude rewrites the function.
+- Ask a question about your code and see the answer in a floating window.
+- The current function scope is highlighted as you navigate.
+
+Security notice: Muninn invokes the Claude Code CLI as a subprocess. Your
+buffer contents are sent to the Claude API over the network. Do not use
+Muninn on files containing secrets, credentials, or sensitive data you would
+not send to a third-party API.
+
+==============================================================================
+2. REQUIREMENTS                                         *muninn-requirements*
+
+- Neovim 0.10+ with tree-sitter support
+- Tree-sitter parsers installed for your languages
+- Claude Code CLI installed and on your `$PATH`
+  https://docs.anthropic.com/en/docs/claude-code
+
+==============================================================================
+3. SETUP                                                      *muninn-setup*
+                                                           *muninn.setup()*
+
+Muninn initializes automatically when loaded. No explicit setup call is
+required. If you want to call setup manually (e.g., for lazy-loading): >lua
+
+    require("muninn").setup()
+<
+No user configuration options are supported yet.
+
+==============================================================================
+4. COMMANDS                                                *muninn-commands*
+
+                                                      *:MuninnAutocomplete*
+:MuninnAutocomplete     Auto-complete the function at the cursor. Claude
+                        analyzes the function body and surrounding context,
+                        then replaces the function with a completed version.
+
+                                                           *:MuninnPrompt*
+:MuninnPrompt           Open a floating prompt where you describe the edit
+                        you want. Claude rewrites the function at the cursor
+                        according to your instructions. See |muninn-prompt|.
+
+                                                         *:MuninnQuestion*
+:MuninnQuestion         Open a floating prompt to ask a question about your
+                        code. The answer is displayed in a floating window.
+                        The buffer is not modified.
+
+                                                              *:MuninnLog*
+:MuninnLog              Show the session log in a floating window.
+
+==============================================================================
+5. KEYMAPS                                                  *muninn-keymaps*
+
+Default keymaps are registered under the `<leader>m` prefix:
+
+    `<leader>ma`    |:MuninnAutocomplete|
+    `<leader>mp`    |:MuninnPrompt|
+    `<leader>mq`    |:MuninnQuestion|
+    `<leader>ml`    |:MuninnLog|
+
+==============================================================================
+6. PROMPT WINDOW                                             *muninn-prompt*
+
+The floating prompt used by |:MuninnPrompt| and |:MuninnQuestion| supports
+multi-line input with the following keybindings:
+
+    `<C-s>`         Submit the prompt (works in normal and insert mode).
+    `<Esc>`         Dismiss the prompt without submitting.
+
+The prompt opens in insert mode. Closing the window by any other means
+(e.g., `:q`) is treated as a dismissal.
+
+ vim:tw=78:ts=8:ft=help:norl:
