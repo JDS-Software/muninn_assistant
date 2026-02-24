@@ -81,7 +81,6 @@ function M.insert_safe_result_at_function(context, safe_result)
     local start_row, end_row = get_context_range(context)
 
     local lines = vim.split(safe_result, "\n", { plain = true })
-    logger():log("INFO", vim.inspect(lines))
     vim.api.nvim_buf_set_lines(context.fn_context.bufnr, start_row, end_row + 1, false, lines)
 end
 

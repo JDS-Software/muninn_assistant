@@ -150,8 +150,8 @@ local function find_top_comment(node)
 end
 
 ---@param bufnr number?
----@return MnContext?
-function M.get_context_at_cursor(bufnr)
+---@return MnFnContext?
+function M.get_fn_context_at_cursor(bufnr)
     local fn_ctxs = M.get_contexts_for_buffer(bufnr)
     if not fn_ctxs or #fn_ctxs == 0 then
         return nil
@@ -162,12 +162,22 @@ function M.get_context_at_cursor(bufnr)
     for i = #fn_ctxs, 1, -1 do
         local fn_ctx = fn_ctxs[i]
         if fn_ctx:contains(cursor) then
-            return new_context(fn_ctx)
+            return fn_ctx
         end
     end
 
-    logger():log("INFO", "failed to find relevant context")
     return nil
+end
+
+---@param bufnr number?
+---@return MnContext?
+function M.get_context_at_cursor(bufnr)
+    local fn_ctx = M.get_fn_context_at_cursor(bufnr)
+    if not fn_ctx then
+        logger():log("INFO", "failed to find relevant context")
+        return nil
+    end
+    return new_context(fn_ctx)
 end
 
 ---@param n TSNode
