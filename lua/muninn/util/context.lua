@@ -311,7 +311,7 @@ end
 
 function M.setup()
     local info = debug.getinfo(2)
-    plugin_root = vim.fn.fnamemodify(info.short_src, ":h:h:h")
+    plugin_root = vim.fn.fnamemodify(info.source:sub(2), ":h:h:h")
 end
 
 return M
