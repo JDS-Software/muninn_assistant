@@ -223,12 +223,20 @@ end
 ---@param ctx MnContext
 ---@return MnAnimation
 function M.new_question_animation(ctx)
-    local img_filepath = ctx:get_file("animations/debug.pbm")
-    local anim_frame = pbm.read(img_filepath)
     local msg = " Muninn Thinking"
-    local banner = bann.new_mono_animation_banner(msg, bann.looper, 1)
+
+    local img_filepath = ctx:get_file("animations/debug.pbm")
+    logger():log("INFO", string.format("Attempting to get animation at [%s]", img_filepath))
+    local anim_frame = pbm.read(img_filepath)
+
+
+    local banner
     if anim_frame then
         banner = bann.new_spritemap_banner(msg, anim_frame, 1)
+        logger():log("INFO", "anim_frame was created")
+    else
+        banner = bann.new_mono_animation_banner(msg, bann.looper, 1)
+        logger():log("INFO", "anim_frame was not created")
     end
 
     local fg_gradient = color.new_triangular_gradient(color.muninn_blue, color.muninn_blue:lerp(color.blue, 0.1),
