@@ -94,10 +94,10 @@ return function()
                     launch_response_viewer(result)
                     ctx:next_state()
                 else
-                    logger():alert("ERROR", "Query failed")
+                    logger():alert("ERROR", "Query failed:\nResult:\n" .. vim.inspect(result))
                     ctx.an_context.preserve_ext = true
                     ctx:next_state()
-                    vim.defer_fn(launch_error(ctx), anim:get_frame_time():to_millis())
+                    vim.defer_fn(launch_error(ctx), anim:get_wait())
                 end
             end)
         end)

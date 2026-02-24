@@ -61,7 +61,7 @@ return function()
                 ctx.an_context.preserve_ext = true
                 vim.defer_fn(function()
                     alert_failure(ctx)
-                end, anim:get_frame_time():to_millis() * 2)
+                end, anim:get_wait() * 2)
             end
             ctx:next_state()
         end
