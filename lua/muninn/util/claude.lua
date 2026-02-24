@@ -90,8 +90,16 @@ local logger = require("muninn.util.log").default
 local function handle_output(system_result, handler)
     if system_result.code == 0 then
         local ok, result = pcall(vim.json.decode, system_result.stdout)
-        result = result --[[@as ClaudeResult]]
-        if ok and result then
+        if (ok and result) then
+            logger():log("DEBUG", "Got: " .. vim.inspect(result))
+            if not result.structured_output then
+                for i = #result, 1, -1 do
+                    if result[i].type == "result" and result[i].structured_output then
+                        result = result[i] --[[@as ClaudeResult]]
+                        break
+                    end
+                end
+            end
             handler(result)
         else
             handler(nil)
