@@ -15,7 +15,7 @@ AI-powered code editing inside Neovim. Place your cursor on a function, run a co
 
 ## Requirements
 
-- Neovim 0.10+ with tree-sitter support
+- Neovim 0.11+ with tree-sitter support
 - Tree-sitter parsers for your languages
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and on your `$PATH`
 

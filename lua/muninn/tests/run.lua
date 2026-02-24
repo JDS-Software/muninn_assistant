@@ -36,10 +36,10 @@ local test_modules = {
     "pbm_test",
     "context.lua_test",
     "context.c_test",
-    --"context.go_test",
-    --"context.javascript_test",
-    --"context.typescript_test",
-    --"context.python_test",
+    "context.go_test",
+    "context.javascript_test",
+    "context.typescript_test",
+    "context.python_test",
 }
 
 -- Test statistics
