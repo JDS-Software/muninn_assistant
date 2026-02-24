@@ -26,6 +26,8 @@ local logger = require("muninn.util.log").default
 local animation = require("muninn.util.decor.animation")
 local float = require("muninn.components.float")
 
+local AUGROUP_NAME = "MuninnResponseViewer"
+
 ---@param ctx MnContext
 local function launch_error(ctx)
     return function()
@@ -58,20 +60,27 @@ local function launch_response_viewer(result)
     local buf = float.create_buf("markdown")
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
     vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+    vim.api.nvim_set_option_value("modified", false, { buf = buf })
 
     local ok, win_handle = pcall(vim.api.nvim_open_win, buf, true, win_opts)
-    if ok then
-        local function close_win()
-            if win_handle and vim.api.nvim_win_is_valid(win_handle) then
-                vim.cmd("stopinsert")
-                vim.api.nvim_win_close(win_handle, true)
-            end
-        end
-
-        vim.api.nvim_set_option_value("wrap", true, { win = win_handle })
-        vim.keymap.set("n", "<Esc>", close_win, { buffer = buf, nowait = true })
-        vim.keymap.set("n", "q", close_win, { buffer = buf, nowait = true })
+    if not ok then
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        return
     end
+
+    local function close_win()
+        if win_handle and vim.api.nvim_win_is_valid(win_handle) then
+            vim.cmd("stopinsert")
+            vim.api.nvim_win_close(win_handle, true)
+        end
+    end
+
+    vim.api.nvim_set_option_value("wrap", true, { win = win_handle })
+    vim.keymap.set("n", "<Esc>", close_win, { buffer = buf, nowait = true })
+    vim.keymap.set("n", "q", close_win, { buffer = buf, nowait = true })
+
+    local group = vim.api.nvim_create_augroup(AUGROUP_NAME, { clear = true })
+    float.on_win_closed(group, win_handle, AUGROUP_NAME, function() end)
 end
 
 return function()
