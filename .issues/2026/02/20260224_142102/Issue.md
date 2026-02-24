@@ -4,7 +4,7 @@
 1
 
 ## Status
-OPEN
+CLOSED
 
 ## Location
 [location]
@@ -35,4 +35,8 @@ javascript: MISSING
 [nvim-treesitter/install/typescript]: Compiling parser
 Error: Process completed with exit code 1.
 ```
+
+## Issue Resolution
+2026-02-24 14:58:24 UTC
+Bumped up the neovim requirement to 0.11+.
 
