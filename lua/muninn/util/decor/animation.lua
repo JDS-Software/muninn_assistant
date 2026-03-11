@@ -261,7 +261,7 @@ end
 ---@param ctx MnContext
 ---@return MnAnimation
 function M.new_debug_animation(ctx)
-    local img_filepath = ctx:get_file("animations/lightning.pbm")
+    local img_filepath = ctx:get_file("animations/debug.pbm")
     logger():log("INFO", string.format("Attempting to get animation at [%s]", img_filepath))
     local anim_frame = pbm.read(img_filepath)
     local msg = "DEBUG"
