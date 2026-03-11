@@ -57,7 +57,7 @@ end
 function MnScopeViewerCacheLine:_create_ext_mark()
     local sRow, sCol = self.fn_ctx:get_start()
     local eRow, eCol = self.fn_ctx:get_end()
-    local opts = { end_row = eRow, end_col = eCol, hl_group = M.hl_group, hl_eol = true }
+    local opts = { end_row = eRow, end_col = eCol, hl_group = M.hl_group, hl_eol = true, priority = 1 }
     self.ext_mark_id = vim.api.nvim_buf_set_extmark(self.fn_ctx.bufnr, M.ext_namespace, sRow, sCol, opts)
 end
 
