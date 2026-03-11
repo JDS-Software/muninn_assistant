@@ -27,10 +27,6 @@ The user's request is between >>> USER INPUT START <<< and >>> USER INPUT END <<
 The file content is between >>> FILE CONTENT START <<< and >>> FILE CONTENT END <<<.
 The 'content' portion of your response will replace the lines between <content> and </content>.
 
->>> USER INPUT START <<<
-%s
->>> USER INPUT END <<<
-
 >>> FILE CONTENT START <<<
 %s
 
@@ -40,6 +36,10 @@ The 'content' portion of your response will replace the lines between <content> 
 
 %s
 >>> FILE CONTENT END <<<
+
+>>> USER INPUT START <<<
+%s
+>>> USER INPUT END <<<
 
 Make no mistakes. Make it secure.
 ]]
@@ -52,10 +52,10 @@ function M.build_task_prompt(ctx, user_prompt)
     if beginning and middle and ending then
         return string.format(
             task_prompt_template,
-            user_prompt,
             table.concat(beginning, "\n"),
             table.concat(middle, "\n"),
-            table.concat(ending, "\n")
+            table.concat(ending, "\n"),
+            user_prompt
         )
     end
     return require("muninn.util.claude_refusal")
@@ -69,10 +69,6 @@ The user's request is between `>>> USER INPUT START <<<` and `>>> USER INPUT END
 The file content is between `>>> FILE CONTENT START <<<` and `>>> FILE CONTENT END <<<`.
 The user is specifically looking at the content between `>>> BEGIN USER FOCUS >>>` and `<<< END USER FOCUS <<<`.
 
->>> USER INPUT START <<<
-%s
->>> USER INPUT END <<<
-
 >>> FILE CONTENT START <<<
 %s
 
@@ -81,6 +77,11 @@ The user is specifically looking at the content between `>>> BEGIN USER FOCUS >>
 <<< END USER FOCUS <<<
 %s
 >>> FILE CONTENT END <<<
+
+>>> USER INPUT START <<<
+%s
+>>> USER INPUT END <<<
+
 ]]
 
 local query_prompt_template_no_focus =
@@ -90,13 +91,13 @@ Your response will be shown to the user in an annotation.
 The user's request is between `>>> USER INPUT START <<<` and `>>> USER INPUT END <<<`.
 The file content is between `>>> FILE CONTENT START <<<` and `>>> FILE CONTENT END <<<`.
 
->>> USER INPUT START <<<
-%s
->>> USER INPUT END <<<
-
 >>> FILE CONTENT START <<<
 %s
 >>> FILE CONTENT END <<<
+
+>>> USER INPUT START <<<
+%s
+>>> USER INPUT END <<<
 ]]
 
 ---@param ctx MnContext
@@ -107,17 +108,18 @@ function M.build_query_prompt(ctx, user_prompt)
     if beginning and middle and ending then
         return string.format(
             query_prompt_template_with_focus,
-            user_prompt,
             table.concat(beginning, "\n"),
             table.concat(middle, "\n"),
-            table.concat(ending, "\n")
+            table.concat(ending, "\n"),
+            user_prompt
         )
     else
         local file_content = bufutil.get_buffer_content(ctx)
         return string.format(
             query_prompt_template_no_focus,
-            user_prompt,
-            file_content)
+            file_content,
+            user_prompt
+        )
     end
 end
 
