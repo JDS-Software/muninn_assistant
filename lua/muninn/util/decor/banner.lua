@@ -73,7 +73,7 @@ M.blackbird_icon = "\xf0\x9f\x90\xa6\xe2\x80\x8d\xe2\xac\x9b"
 ---@param ctx MnContext
 ---@return MnBanner?
 function M.debug_banner(ctx)
-    local img_path = ctx:get_file("animations/debug.pbm")
+    local img_path = ctx:get_file("animations/lightning.pbm")
     logger():log("INFO", "img_path: " .. img_path)
     local img = pbm.read(img_path)
     if img then

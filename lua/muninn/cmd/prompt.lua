@@ -47,7 +47,7 @@ return function()
 
             local request_prompt = prompt.build_task_prompt(ctx, user_input)
 
-            local anim = animation.new_query_animation()
+            local anim = animation.new_query_animation(ctx)
             anim:start(ctx)
 
             ---@param result ClaudeResult

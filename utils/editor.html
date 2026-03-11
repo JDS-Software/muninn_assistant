@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PBM Flipbook Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; font-family: monospace; background: #1a1a1a; color: #e0e0e0; }
+
+#toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  background: #2a2a2a; border-bottom: 1px solid #444; flex-shrink: 0; flex-wrap: wrap;
+}
+#toolbar button {
+  padding: 4px 10px; background: #3a3a3a; color: #e0e0e0;
+  border: 1px solid #555; cursor: pointer; font-family: monospace; font-size: 13px;
+}
+#toolbar button:hover { background: #4a4a4a; }
+#toolbar button.active { background: #1a3a6a; border-color: #4488ff; color: #88bbff; }
+#toolbar label { font-size: 13px; }
+#toolbar select, #toolbar input[type=number] {
+  background: #3a3a3a; color: #e0e0e0; border: 1px solid #555;
+  padding: 4px; font-family: monospace;
+}
+#toolbar input[type=number] { width: 46px; text-align: center; }
+#frame-counter { padding: 0 8px; font-size: 13px; white-space: nowrap; }
+.sep { width: 1px; height: 24px; background: #555; margin: 0 4px; }
+
+#main { display: flex; flex: 1; overflow: hidden; }
+
+#editor-area {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  overflow: auto; background: #222;
+}
+#editor-canvas { cursor: crosshair; display: block; }
+
+#sidebar {
+  width: 120px; flex-shrink: 0; overflow-y: auto; background: #2a2a2a;
+  border-left: 1px solid #444; padding: 6px;
+}
+.thumb-wrapper { margin-bottom: 6px; cursor: pointer; text-align: center; }
+.thumb-wrapper canvas { display: block; margin: 0 auto; border: 2px solid transparent; }
+.thumb-wrapper.active canvas { border-color: #4488ff; }
+.thumb-label { font-size: 10px; color: #888; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <button id="btn-new">New</button>
+  <button id="btn-add-frame">Add Frame</button>
+  <button id="btn-clone">Clone</button>
+  <button id="btn-del-frame">Delete Frame</button>
+  <div class="sep"></div>
+  <button id="btn-prev">&#9664;</button>
+  <span id="frame-counter">Frame 1 / 1</span>
+  <button id="btn-next">&#9654;</button>
+  <div class="sep"></div>
+  <label>Zoom:
+    <select id="zoom-select">
+      <option value="8">8px</option>
+      <option value="12">12px</option>
+      <option value="16" selected>16px</option>
+      <option value="20">20px</option>
+      <option value="24">24px</option>
+      <option value="32">32px</option>
+    </select>
+  </label>
+  <label>Gens:
+    <input type="number" id="gen-input" value="4" min="1" max="4">
+  </label>
+  <div class="sep"></div>
+  <button id="btn-bleed">Bleed Thru</button>
+  <button id="btn-move">Move</button>
+  <div class="sep"></div>
+  <button id="btn-export">Export PBM</button>
+  <button id="btn-import-trigger">Import PBM</button>
+  <input type="file" id="file-import" accept=".pbm" style="display:none">
+</div>
+
+<div id="main">
+  <div id="editor-area">
+    <canvas id="editor-canvas"></canvas>
+  </div>
+  <div id="sidebar"></div>
+</div>
+
+<script>
+const state = {
+  width: 8,
+  frames: [new Uint8Array(64)],
+  currentFrame: 0,
+  pixelSize: 16,
+  generations: 4,   // includes current frame; ghosts = generations - 1
+};
+
+// ── Canvas refs ──────────────────────────────────────────────────────────────
+const editorCanvas = document.getElementById('editor-canvas');
+const ctx = editorCanvas.getContext('2d');
+const sidebar = document.getElementById('sidebar');
+const frameCounter = document.getElementById('frame-counter');
+const genInput = document.getElementById('gen-input');
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+// Fixed grey palette: index 0 = nearest/darkest, higher = farther/lighter.
+// Colors are stable regardless of how many ghosts are shown.
+const GHOST_COLORS = ['#404040', '#808080', '#b0b0b0'];
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+function renderEditor() {
+  const { width, frames, currentFrame, pixelSize, generations } = state;
+  const size = width * pixelSize;
+  const ml = marginLeft();
+  const mt = marginTop();
+  editorCanvas.width = size + ml;
+  editorCanvas.height = size + mt;
+
+  // Margin background
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
+
+  // Translate so all grid drawing is offset by margins
+  ctx.save();
+  ctx.translate(ml, mt);
+
+  // 1. White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  // 2. Ghost frames (back to front, farthest first)
+  const maxGhosts = clamp(generations - 1, 0, currentFrame);
+  for (let k = maxGhosts - 1; k >= 0; k--) {
+    const fi = currentFrame - (k + 1);
+    drawFramePixels(frames[fi], width, pixelSize, GHOST_COLORS[k]);
+  }
+
+  // 3. Current frame (with move-tool source rect cleared if floating)
+  drawCurrentFrame(width, pixelSize);
+
+  // 4. Grid
+  ctx.strokeStyle = '#00008b';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= width; i++) {
+    const pos = i * pixelSize - 0.5;
+    ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(size, pos); ctx.stroke();
+  }
+
+  // 5. Tool overlays
+  if (bleedThruMode) drawRectOverlay(bleedStart, bleedCurrent, 'rgba(68,136,255,0.18)', '#4488ff');
+  if (move.phase === 'select') drawRectOverlay(move.selectStart, move.selectCurrent, 'rgba(255,160,0,0.15)', '#ffa000');
+  if (move.phase === 'float') drawFloatingSelection();
+
+  // 6. Cursor highlight — red outline around the region that will be affected
+  if (cursorPos.x >= 0 && cursorPos.x < width && cursorPos.y >= 0 && cursorPos.y < width
+      && !bleedThruMode && move.phase === 'idle') {
+    ctx.strokeStyle = '#ff0000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      cursorPos.x * pixelSize + 1,
+      cursorPos.y * pixelSize + 1,
+      pixelSize - 2,
+      pixelSize - 2
+    );
+  }
+
+  ctx.restore();
+
+  // 6. Margin rulers
+  drawMarginRulers(ml, mt, size, width, pixelSize);
+}
+
+function drawFramePixels(frame, width, pixelSize, color) {
+  ctx.fillStyle = color;
+  for (let y = 0; y < width; y++) {
+    for (let x = 0; x < width; x++) {
+      if (frame[y * width + x]) {
+        ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+      }
+    }
+  }
+}
+
+// Draws current frame, masking out the move source rect when floating
+function drawCurrentFrame(width, pixelSize) {
+  const frame = state.frames[state.currentFrame];
+  ctx.fillStyle = '#000000';
+  for (let y = 0; y < width; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!frame[y * width + x]) continue;
+      // In float phase, pixels in the source rect have been cleared from frame already
+      ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+    }
+  }
+}
+
+function drawRectOverlay(start, current, fillColor, strokeColor) {
+  if (!start || !current) return;
+  const { pixelSize } = state;
+  const x0 = Math.min(start.x, current.x);
+  const y0 = Math.min(start.y, current.y);
+  const x1 = Math.max(start.x, current.x) + 1;
+  const y1 = Math.max(start.y, current.y) + 1;
+  ctx.fillStyle = fillColor;
+  ctx.fillRect(x0 * pixelSize, y0 * pixelSize, (x1 - x0) * pixelSize, (y1 - y0) * pixelSize);
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.strokeRect(x0 * pixelSize + 0.75, y0 * pixelSize + 0.75, (x1 - x0) * pixelSize - 1.5, (y1 - y0) * pixelSize - 1.5);
+  ctx.setLineDash([]);
+}
+
+function drawFloatingSelection() {
+  if (!move.rect || !move.pixels) return;
+  const { pixelSize } = state;
+  const { x0, y0, x1, y1 } = move.rect;
+  const rw = x1 - x0 + 1;
+  const rh = y1 - y0 + 1;
+  const dx = move.offset.dx;
+  const dy = move.offset.dy;
+
+  // Draw floating pixels
+  ctx.fillStyle = '#000000';
+  for (let ry = 0; ry < rh; ry++) {
+    for (let rx = 0; rx < rw; rx++) {
+      if (move.pixels[ry * rw + rx]) {
+        const cx = x0 + rx + dx;
+        const cy = y0 + ry + dy;
+        ctx.fillRect(cx * pixelSize, cy * pixelSize, pixelSize, pixelSize);
+      }
+    }
+  }
+
+  // Dashed border around floating rect
+  const bx0 = (x0 + dx) * pixelSize;
+  const by0 = (y0 + dy) * pixelSize;
+  ctx.strokeStyle = '#ffa000';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.strokeRect(bx0 + 0.75, by0 + 0.75, rw * pixelSize - 1.5, rh * pixelSize - 1.5);
+  ctx.setLineDash([]);
+}
+
+function drawMarginRulers(ml, mt, size, width, pixelSize) {
+  const fontSize = Math.min(11, Math.max(7, pixelSize - 2));
+  ctx.font = fontSize + 'px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Top ruler (column indices)
+  for (let i = 0; i < width; i++) {
+    const cx = ml + i * pixelSize + pixelSize / 2;
+    const cy = mt / 2;
+    const isHovered = (cursorPos.x === i);
+    if (isHovered) {
+      ctx.fillStyle = '#4488ff';
+      ctx.fillRect(ml + i * pixelSize, 0, pixelSize, mt);
+      ctx.fillStyle = '#ffffff';
+    } else {
+      ctx.fillStyle = '#888888';
+    }
+    ctx.fillText(String(i+1), cx, cy);
+  }
+
+  // Left ruler (row indices)
+  ctx.textAlign = 'right';
+  for (let i = 0; i < width; i++) {
+    const cx = ml - 4;
+    const cy = mt + i * pixelSize + pixelSize / 2;
+    const isHovered = (cursorPos.y === i);
+    if (isHovered) {
+      ctx.fillStyle = '#4488ff';
+      ctx.fillRect(0, mt + i * pixelSize, ml, pixelSize);
+      ctx.fillStyle = '#ffffff';
+    } else {
+      ctx.fillStyle = '#888888';
+    }
+    ctx.fillText(String(i+1), cx, cy);
+  }
+
+  // Corner cursor display
+  if (cursorPos.x >= 0 && cursorPos.x < width && cursorPos.y >= 0 && cursorPos.y < width) {
+    ctx.fillStyle = '#4488ff';
+    ctx.fillRect(0, 0, ml, mt);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = Math.min(10, fontSize) + 'px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cursorPos.x + ',' + cursorPos.y, ml / 2, mt / 2);
+  }
+}
+
+function renderThumb(canvas, frame, width) {
+  const THUMB = 80;
+  canvas.width = THUMB;
+  canvas.height = THUMB;
+  const tc = canvas.getContext('2d');
+  tc.fillStyle = '#ffffff';
+  tc.fillRect(0, 0, THUMB, THUMB);
+  const ps = THUMB / width;
+  tc.fillStyle = '#000000';
+  for (let y = 0; y < width; y++) {
+    for (let x = 0; x < width; x++) {
+      if (frame[y * width + x]) tc.fillRect(x * ps, y * ps, ps, ps);
+    }
+  }
+}
+
+function renderSidebar() {
+  const { frames, currentFrame, width } = state;
+  const existing = sidebar.querySelectorAll('.thumb-wrapper');
+  for (let i = existing.length - 1; i >= frames.length; i--) existing[i].remove();
+
+  for (let i = 0; i < frames.length; i++) {
+    let wrapper = sidebar.querySelector(`.thumb-wrapper[data-index="${i}"]`);
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.className = 'thumb-wrapper';
+      wrapper.dataset.index = i;
+      const c = document.createElement('canvas');
+      wrapper.appendChild(c);
+      const lbl = document.createElement('div');
+      lbl.className = 'thumb-label';
+      wrapper.appendChild(lbl);
+      wrapper.addEventListener('click', () => { cancelMove(); state.currentFrame = i; update(); });
+      sidebar.appendChild(wrapper);
+    }
+    wrapper.classList.toggle('active', i === currentFrame);
+    wrapper.querySelector('.thumb-label').textContent = `${i + 1}`;
+    renderThumb(wrapper.querySelector('canvas'), frames[i], width);
+  }
+}
+
+function renderFrameCounter() {
+  frameCounter.textContent = `Frame ${state.currentFrame + 1} / ${state.frames.length}`;
+}
+
+// Update the max attr of gen input to reflect available frames
+function updateGenInputMax() {
+  const max = Math.min(state.currentFrame + 1, 4);
+  genInput.max = max;
+  if (parseInt(genInput.value) > max) genInput.value = max;
+  state.generations = parseInt(genInput.value);
+}
+
+function update() {
+  updateGenInputMax();
+  renderEditor();
+  renderSidebar();
+  renderFrameCounter();
+}
+
+// ── Bleed-thru mode ──────────────────────────────────────────────────────────
+let bleedThruMode = false;
+let bleedStart = null;
+let bleedCurrent = null;
+
+function setBleedThruMode(on) {
+  if (on) cancelMove();
+  bleedThruMode = on;
+  document.getElementById('btn-bleed').classList.toggle('active', on);
+  updateCursor();
+}
+
+function commitBleed() {
+  if (!bleedStart || !bleedCurrent) return;
+  const { width, frames, currentFrame } = state;
+  const srcIdx = currentFrame - 1;
+  if (srcIdx < 0) return;
+  const src = frames[srcIdx];
+  const dst = frames[currentFrame];
+  const x0 = Math.min(bleedStart.x, bleedCurrent.x);
+  const y0 = Math.min(bleedStart.y, bleedCurrent.y);
+  const x1 = Math.max(bleedStart.x, bleedCurrent.x);
+  const y1 = Math.max(bleedStart.y, bleedCurrent.y);
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (x >= 0 && x < width && y >= 0 && y < width) {
+        dst[y * width + x] = src[y * width + x];
+      }
+    }
+  }
+}
+
+// ── Move tool ────────────────────────────────────────────────────────────────
+// Phases: 'idle' | 'select' | 'float'
+const move = {
+  phase: 'idle',
+  selectStart: null,
+  selectCurrent: null,
+  rect: null,          // {x0,y0,x1,y1} logical pixels (inclusive), original position
+  pixels: null,        // Uint8Array of captured pixels
+  originalFrame: null, // backup Uint8Array for cancel
+  offset: { dx: 0, dy: 0 },
+  dragging: false,
+  dragAnchor: null,    // {x,y} logical pixel where current drag started
+};
+
+function setMoveMode(on) {
+  if (on) {
+    setBleedThruMode(false);
+    cancelMove();
+    move.phase = 'select';
+    document.getElementById('btn-move').classList.add('active');
+  } else {
+    cancelMove();
+  }
+  updateCursor();
+}
+
+function cancelMove() {
+  if (move.phase === 'float' && move.originalFrame) {
+    // Restore original frame
+    state.frames[state.currentFrame].set(move.originalFrame);
+  }
+  move.phase = 'idle';
+  move.selectStart = null;
+  move.selectCurrent = null;
+  move.rect = null;
+  move.pixels = null;
+  move.originalFrame = null;
+  move.offset = { dx: 0, dy: 0 };
+  move.dragging = false;
+  move.dragAnchor = null;
+  document.getElementById('btn-move').classList.remove('active');
+  updateCursor();
+}
+
+function commitMove() {
+  if (move.phase !== 'float') return;
+  const { width, frames, currentFrame } = state;
+  const frame = frames[currentFrame];
+  const { x0, y0, x1, y1 } = move.rect;
+  const rw = x1 - x0 + 1;
+  const rh = y1 - y0 + 1;
+  const { dx, dy } = move.offset;
+  for (let ry = 0; ry < rh; ry++) {
+    for (let rx = 0; rx < rw; rx++) {
+      if (!move.pixels[ry * rw + rx]) continue;
+      const tx = x0 + rx + dx;
+      const ty = y0 + ry + dy;
+      if (tx >= 0 && tx < width && ty >= 0 && ty < width) {
+        frame[ty * width + tx] = 1;
+      }
+    }
+  }
+  move.phase = 'idle';
+  move.rect = null;
+  move.pixels = null;
+  move.originalFrame = null;
+  move.offset = { dx: 0, dy: 0 };
+  document.getElementById('btn-move').classList.remove('active');
+  updateCursor();
+}
+
+function enterFloatPhase() {
+  const { width, frames, currentFrame } = state;
+  const frame = frames[currentFrame];
+  const x0 = Math.min(move.selectStart.x, move.selectCurrent.x);
+  const y0 = Math.min(move.selectStart.y, move.selectCurrent.y);
+  const x1 = Math.max(move.selectStart.x, move.selectCurrent.x);
+  const y1 = Math.max(move.selectStart.y, move.selectCurrent.y);
+
+  // Clamp to frame bounds
+  const cx0 = clamp(x0, 0, width - 1);
+  const cy0 = clamp(y0, 0, width - 1);
+  const cx1 = clamp(x1, 0, width - 1);
+  const cy1 = clamp(y1, 0, width - 1);
+
+  const rw = cx1 - cx0 + 1;
+  const rh = cy1 - cy0 + 1;
+
+  move.rect = { x0: cx0, y0: cy0, x1: cx1, y1: cy1 };
+  move.originalFrame = frame.slice();
+  move.pixels = new Uint8Array(rw * rh);
+  for (let ry = 0; ry < rh; ry++) {
+    for (let rx = 0; rx < rw; rx++) {
+      move.pixels[ry * rw + rx] = frame[(cy0 + ry) * width + (cx0 + rx)];
+      frame[(cy0 + ry) * width + (cx0 + rx)] = 0; // clear source
+    }
+  }
+  move.offset = { dx: 0, dy: 0 };
+  move.phase = 'float';
+  move.selectStart = null;
+  move.selectCurrent = null;
+  updateCursor();
+}
+
+// ── Cursor management ────────────────────────────────────────────────────────
+function updateCursor() {
+  if (bleedThruMode) { editorCanvas.style.cursor = 'cell'; return; }
+  if (move.phase === 'select') { editorCanvas.style.cursor = 'cell'; return; }
+  if (move.phase === 'float') { editorCanvas.style.cursor = move.dragging ? 'grabbing' : 'grab'; return; }
+  editorCanvas.style.cursor = 'crosshair';
+}
+
+// ── Cursor tracking for margin markers ───────────────────────────────────────
+let cursorPos = { x: -1, y: -1 };
+
+// ── Mouse painting ───────────────────────────────────────────────────────────
+let painting = false;
+let paintValue = 1;
+
+function marginLeft() {
+  const digits = String(state.width - 1).length;
+  return digits * 8 + 10;
+}
+function marginTop() { return 18; }
+
+function canvasCoords(e) {
+  const rect = editorCanvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left - marginLeft()) / state.pixelSize);
+  const y = Math.floor((e.clientY - rect.top - marginTop()) / state.pixelSize);
+  return { x, y };
+}
+
+function paint(e) {
+  const { x, y } = canvasCoords(e);
+  const { width, frames, currentFrame } = state;
+  if (x < 0 || x >= width || y < 0 || y >= width) return;
+  const idx = y * width + x;
+  if (frames[currentFrame][idx] !== paintValue) {
+    frames[currentFrame][idx] = paintValue;
+    renderEditor();
+    renderSidebar();
+  }
+}
+
+editorCanvas.addEventListener('mousedown', (e) => {
+  // Bleed-thru select
+  if (bleedThruMode) {
+    const { x, y } = canvasCoords(e);
+    bleedStart = { x, y };
+    bleedCurrent = { x, y };
+    renderEditor();
+    return;
+  }
+
+  // Move select phase
+  if (move.phase === 'select') {
+    const { x, y } = canvasCoords(e);
+    move.selectStart = { x, y };
+    move.selectCurrent = { x, y };
+    renderEditor();
+    return;
+  }
+
+  // Move float phase: start drag
+  if (move.phase === 'float') {
+    const { x, y } = canvasCoords(e);
+    move.dragging = true;
+    move.dragAnchor = { x, y };
+    updateCursor();
+    return;
+  }
+
+  // Normal paint
+  painting = true;
+  const { x, y } = canvasCoords(e);
+  const { width, frames, currentFrame } = state;
+  if (x >= 0 && x < width && y >= 0 && y < width) {
+    paintValue = frames[currentFrame][y * width + x] ? 0 : 1;
+  }
+  paint(e);
+});
+
+editorCanvas.addEventListener('mousemove', (e) => {
+  // Update cursor position for margin markers
+  const pos = canvasCoords(e);
+  if (pos.x !== cursorPos.x || pos.y !== cursorPos.y) {
+    cursorPos.x = pos.x;
+    cursorPos.y = pos.y;
+    if (!painting && !bleedStart && !(move.phase === 'select' && move.selectStart) && !(move.phase === 'float' && move.dragging)) {
+      renderEditor();
+    }
+  }
+
+  if (bleedThruMode && bleedStart) {
+    bleedCurrent = canvasCoords(e);
+    renderEditor();
+    return;
+  }
+  if (move.phase === 'select' && move.selectStart) {
+    move.selectCurrent = canvasCoords(e);
+    renderEditor();
+    return;
+  }
+  if (move.phase === 'float' && move.dragging) {
+    const { x, y } = canvasCoords(e);
+    move.offset.dx += x - move.dragAnchor.x;
+    move.offset.dy += y - move.dragAnchor.y;
+    move.dragAnchor = { x, y };
+    renderEditor();
+    return;
+  }
+  if (painting) paint(e);
+});
+
+editorCanvas.addEventListener('mouseleave', () => {
+  cursorPos.x = -1;
+  cursorPos.y = -1;
+  renderEditor();
+});
+
+editorCanvas.addEventListener('dblclick', (e) => {
+  if (move.phase === 'float') { commitMove(); update(); }
+});
+
+window.addEventListener('mouseup', (e) => {
+  if (bleedThruMode && bleedStart) {
+    bleedCurrent = canvasCoords(e);
+    if (state.currentFrame > 0) {
+      commitBleed();
+    } else {
+      alert('No previous frame to bleed from (frame 1 has no predecessor).');
+    }
+    bleedStart = null;
+    bleedCurrent = null;
+    setBleedThruMode(false);
+    update();
+    return;
+  }
+
+  if (move.phase === 'select' && move.selectStart) {
+    move.selectCurrent = canvasCoords(e);
+    enterFloatPhase();
+    renderEditor();
+    return;
+  }
+
+  if (move.phase === 'float' && move.dragging) {
+    move.dragging = false;
+    updateCursor();
+    return;
+  }
+
+  painting = false;
+});
+
+// Keyboard: Enter commits, Escape cancels
+window.addEventListener('keydown', (e) => {
+  if (move.phase === 'float') {
+    if (e.key === 'Enter') { commitMove(); update(); }
+    if (e.key === 'Escape') { cancelMove(); update(); }
+  }
+  if (bleedThruMode && e.key === 'Escape') {
+    bleedStart = null;
+    bleedCurrent = null;
+    setBleedThruMode(false);
+    renderEditor();
+  }
+
+  // Mnemonics (skip if focus is on an input)
+  if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+    if (e.key === 'n') { document.getElementById('btn-add-frame').click(); return; }
+    if (e.key === 'c') { document.getElementById('btn-clone').click(); return; }
+    if (e.key === 'b') { document.getElementById('btn-bleed').click(); return; }
+    if (e.key === 'm') { document.getElementById('btn-move').click(); return; }
+  }
+
+  // Arrow keys: left/right = frame nav, up/down = generations
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+    e.preventDefault();
+    if (e.key === 'ArrowLeft' && state.currentFrame > 0) {
+      cancelMove(); state.currentFrame--; update();
+    } else if (e.key === 'ArrowRight' && state.currentFrame < state.frames.length - 1) {
+      cancelMove(); state.currentFrame++; update();
+    } else if (e.key === 'ArrowUp') {
+      const max = Math.min(state.currentFrame + 1, 4);
+      const v = clamp(state.generations + 1, 1, max);
+      if (v !== state.generations) { genInput.value = v; state.generations = v; renderEditor(); }
+    } else if (e.key === 'ArrowDown') {
+      const v = clamp(state.generations - 1, 1, state.currentFrame + 1);
+      if (v !== state.generations) { genInput.value = v; state.generations = v; renderEditor(); }
+    }
+  }
+});
+
+// ── Toolbar actions ──────────────────────────────────────────────────────────
+document.getElementById('btn-new').addEventListener('click', () => {
+  const input = prompt('Width (must be a multiple of 4):', '8');
+  if (input === null) return;
+  const w = parseInt(input, 10);
+  if (!Number.isInteger(w) || w < 4 || w % 4 !== 0) {
+    alert('Width must be a positive multiple of 4.');
+    return;
+  }
+  cancelMove();
+  state.width = w;
+  state.frames = [new Uint8Array(w * w)];
+  state.currentFrame = 0;
+  update();
+});
+
+document.getElementById('btn-add-frame').addEventListener('click', () => {
+  const { width, frames, currentFrame } = state;
+  frames.splice(currentFrame + 1, 0, new Uint8Array(width * width));
+  state.currentFrame = currentFrame + 1;
+  update();
+});
+
+document.getElementById('btn-clone').addEventListener('click', () => {
+  const { width, frames, currentFrame } = state;
+  frames.splice(currentFrame + 1, 0, frames[currentFrame].slice());
+  state.currentFrame = currentFrame + 1;
+  update();
+});
+
+document.getElementById('btn-del-frame').addEventListener('click', () => {
+  if (state.frames.length === 1) { alert('Cannot delete the only frame.'); return; }
+  cancelMove();
+  state.frames.splice(state.currentFrame, 1);
+  if (state.currentFrame >= state.frames.length) state.currentFrame = state.frames.length - 1;
+  update();
+});
+
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if (state.currentFrame > 0) { cancelMove(); state.currentFrame--; update(); }
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (state.currentFrame < state.frames.length - 1) { cancelMove(); state.currentFrame++; update(); }
+});
+
+document.getElementById('zoom-select').addEventListener('change', (e) => {
+  state.pixelSize = parseInt(e.target.value, 10);
+  update();
+});
+
+genInput.addEventListener('input', () => {
+  const max = state.currentFrame + 1;
+  const v = clamp(parseInt(genInput.value) || 1, 1, max);
+  genInput.value = v;
+  state.generations = v;
+  renderEditor();
+});
+
+document.getElementById('btn-bleed').addEventListener('click', () => {
+  setBleedThruMode(!bleedThruMode);
+  if (!bleedThruMode) { bleedStart = null; bleedCurrent = null; renderEditor(); }
+});
+
+document.getElementById('btn-move').addEventListener('click', () => {
+  if (move.phase !== 'idle') { cancelMove(); update(); }
+  else setMoveMode(true);
+});
+
+// ── Export PBM ───────────────────────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  if (move.phase === 'float') { commitMove(); update(); }
+  const { width, frames } = state;
+  const lines = [`P1`, `${width} ${width * frames.length}`];
+  for (const frame of frames) {
+    for (let row = 0; row < width; row++) {
+      let rowStr = '';
+      for (let col = 0; col < width; col++) rowStr += frame[row * width + col];
+      lines.push(rowStr);
+    }
+  }
+  const blob = new Blob([lines.join('\n') + '\n'], { type: 'image/x-portable-bitmap' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'animation.pbm'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ── Import PBM ───────────────────────────────────────────────────────────────
+document.getElementById('btn-import-trigger').addEventListener('click', () => {
+  document.getElementById('file-import').click();
+});
+
+document.getElementById('file-import').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try { importPBM(ev.target.result); }
+    catch (err) { alert('Failed to import PBM: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function importPBM(text) {
+  const lines = text.split('\n').filter(l => !l.startsWith('#'));
+  const tokens = lines.join(' ').trim().split(/\s+/);
+  let pos = 0;
+  const magic = tokens[pos++];
+  if (magic !== 'P1') throw new Error('Not a P1 PBM file.');
+  const fileWidth = parseInt(tokens[pos++], 10);
+  const fileHeight = parseInt(tokens[pos++], 10);
+  if (fileWidth % 4 !== 0) throw new Error(`Width ${fileWidth} is not a multiple of 4.`);
+  if (fileHeight % fileWidth !== 0) throw new Error(`Height ${fileHeight} is not a multiple of width ${fileWidth}.`);
+  const numFrames = fileHeight / fileWidth;
+  const digits = tokens.slice(pos).join('').replace(/[^01]/g, '');
+  const totalPixels = fileWidth * fileHeight;
+  if (digits.length < totalPixels) throw new Error(`Not enough pixel data (got ${digits.length}, need ${totalPixels}).`);
+  const frames = [];
+  for (let f = 0; f < numFrames; f++) {
+    const frame = new Uint8Array(fileWidth * fileWidth);
+    const base = f * fileWidth * fileWidth;
+    for (let i = 0; i < fileWidth * fileWidth; i++) frame[i] = digits[base + i] === '1' ? 1 : 0;
+    frames.push(frame);
+  }
+  cancelMove();
+  state.width = fileWidth;
+  state.frames = frames;
+  state.currentFrame = 0;
+  update();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+state.generations = parseInt(genInput.value);
+update();
+</script>
+</body>
+</html>

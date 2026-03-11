@@ -209,9 +209,21 @@ function M.new_autocomplete_animation()
 end
 
 ---@return MnAnimation
-function M.new_query_animation()
-    local banner = bann.new_mono_animation_banner(" Muninn Working ", bann.sworl, 2)
+function M.new_query_animation(ctx)
+    local msg = " Muninn Working "
 
+    local img_filepath = ctx:get_file("animations/lightning.pbm")
+    logger():log("INFO", string.format("Attempting to get animation at [%s]", img_filepath))
+    local anim_frame = pbm.read(img_filepath)
+
+    local banner
+    if anim_frame then
+        banner = bann.new_spritemap_banner(msg, anim_frame, 1)
+        logger():log("INFO", "anim_frame was created")
+    else
+        banner = bann.new_mono_animation_banner(msg, bann.looper, 1)
+        logger():log("INFO", "anim_frame was not created")
+    end
     local background = color.get_theme_background()
     local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
 
@@ -225,10 +237,9 @@ end
 function M.new_question_animation(ctx)
     local msg = " Muninn Thinking"
 
-    local img_filepath = ctx:get_file("animations/debug.pbm")
+    local img_filepath = ctx:get_file("animations/rain.pbm")
     logger():log("INFO", string.format("Attempting to get animation at [%s]", img_filepath))
     local anim_frame = pbm.read(img_filepath)
-
 
     local banner
     if anim_frame then
@@ -250,8 +261,19 @@ end
 ---@param ctx MnContext
 ---@return MnAnimation
 function M.new_debug_animation(ctx)
-    local banner = bann.debug_banner(ctx)
-    if not banner then banner = bann.new_mono_animation_banner("Debug Fallback", bann.looper, 1) end
+    local img_filepath = ctx:get_file("animations/lightning.pbm")
+    logger():log("INFO", string.format("Attempting to get animation at [%s]", img_filepath))
+    local anim_frame = pbm.read(img_filepath)
+    local msg = "DEBUG"
+
+    local banner
+    if anim_frame then
+        banner = bann.new_spritemap_banner(msg, anim_frame, 1)
+        logger():log("INFO", "anim_frame was created")
+    else
+        banner = bann.new_mono_animation_banner(msg, bann.looper, 1)
+        logger():log("INFO", "anim_frame was not created")
+    end
 
     local background = color.get_theme_background()
     local bg_gradient = color.new_triangular_gradient(background, background:lerp(color.grey, 0.1), background)
