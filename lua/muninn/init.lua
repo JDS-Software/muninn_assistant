@@ -28,6 +28,7 @@ local function init_commands()
     vim.api.nvim_create_user_command("MuninnDebug", require("muninn.cmd.debug"), {})
     vim.api.nvim_create_user_command("MuninnLog", require("muninn.cmd.log"), {})
     vim.api.nvim_create_user_command("MuninnQuestion", require("muninn.cmd.question"), {})
+    vim.api.nvim_create_user_command("MuninnStatus", require("muninn.cmd.status"), {})
 end
 
 local function init_keymap()
@@ -39,6 +40,7 @@ local function init_keymap()
     vim.keymap.set({ "n" }, "<leader>md", ":MuninnDebug<CR>", { silent = true, desc = "Muninn Debug" })
     vim.keymap.set({ "n" }, "<leader>ml", ":MuninnLog<CR>", { silent = true, desc = "Muninn Log" })
     vim.keymap.set({ "n" }, "<leader>mq", ":MuninnQuestion<CR>", { silent = true, desc = "Muninn Question" })
+    vim.keymap.set({ "n" }, "<leader>ms", ":MuninnStatus<CR>", { silent = true, desc = "Muninn Status" })
 end
 
 -- This exists on purpose and does nothing on purpose.
@@ -50,6 +52,7 @@ end
 function M.setup(user_input)
     if not vim.g.muninn_init then
         require("muninn.util.log").setup()
+        require("muninn.util.cost").setup()
         require("muninn.util.event_listeners").setup()
         require("muninn.util.context").setup()
         if user_input then

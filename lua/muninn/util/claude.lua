@@ -84,6 +84,7 @@ local command_template = {
 ---@alias MuninnClaudeHandler fun(result: ClaudeResult?): nil
 
 local logger = require("muninn.util.log").default
+local tracker = require("muninn.util.cost").default
 
 ---@param system_result vim.SystemCompleted
 ---@param handler MuninnClaudeHandler
@@ -100,8 +101,10 @@ local function handle_output(system_result, handler)
                     end
                 end
             end
+            tracker():record(result)
             handler(result)
         else
+            tracker():record(nil)
             handler(nil)
         end
     else
@@ -109,6 +112,7 @@ local function handle_output(system_result, handler)
         if system_result.stderr and system_result.stderr ~= "" then
             logger():alert("ERROR", system_result.stderr)
         end
+        tracker():record(nil)
         handler(nil)
     end
 end
